@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Hub Login</title>
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='bolingbroke-logo.png') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+  <main class="auth-shell">
+    <section class="auth-panel hub-auth-panel">
+      <header class="hub-auth-brand">
+        <img class="auth-logo" src="{{ url_for('static', filename='bolingbroke-logo.png') }}" alt="Bolingbroke State Penitentiary logo">
+        <div><span>San Andreas DOC</span><strong>Bolingbroke State Penitentiary</strong></div>
+      </header>
+      <div class="hub-auth-intro">
+        <p class="eyebrow">Secure Department Access</p>
+        <h1>Welcome back</h1>
+        <p class="lede">Sign in to open your authorized DOC panels and tools.</p>
+      </div>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="flash-stack">
+            {% for category, message in messages %}
+              <div class="flash {{ category }}">{{ message }}</div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      <form method="post" class="auth-form">
+        <label>
+          <span>Account ID</span>
+          <div class="hub-auth-input"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm7 8a7 7 0 0 0-14 0"/></svg><input name="username" autocomplete="username" placeholder="Enter your CID or username" required autofocus></div>
+        </label>
+        <label>
+          <span>Password</span>
+          <div class="hub-auth-input"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M7 10V8a5 5 0 0 1 10 0v2m-11 0h12v10H6V10Z"/></svg><input type="password" name="password" autocomplete="current-password" placeholder="Enter your password" required></div>
+        </label>
+        <button type="submit">Sign In to Hub <span>&rarr;</span></button>
+      </form>
+      <footer class="hub-auth-footer"><span>Authorized personnel only</span><a class="back-link" href="{{ url_for('index') }}">&larr; Return home</a></footer>
+    </section>
+  </main>
+</body>
+</html>

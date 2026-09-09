@@ -1,0 +1,50 @@
+{% set duty = profile_duty(profile) %}
+<section class="employee-profile-panel duty-hours" id="duty-hours" aria-labelledby="duty-heading">
+  <header class="duty-heading"><div><p class="eyebrow">Service record</p><h2 id="duty-heading">Duty Hours</h2></div>
+    {% if duty %}<nav aria-label="Duty week navigation">
+      {% if duty.newer %}<a class="button secondary small-button" data-duty-navigation href="{{ request.path }}?embed={{ '1' if embedded else '0' }}&amp;duty_week={{ duty.newer }}#duty-hours">Newer</a>{% else %}<button class="secondary small-button" disabled>Newer</button>{% endif %}
+      {% if duty.older %}<a class="button secondary small-button" data-duty-navigation href="{{ request.path }}?embed={{ '1' if embedded else '0' }}&amp;duty_week={{ duty.older }}#duty-hours">Older</a>{% endif %}
+    </nav>{% endif %}
+  </header>
+  {% if duty %}
+  <div class="duty-controls">
+    <p>{% if duty.weeklyRequirementHours is not none %}As a <strong>{{ duty.rank }}</strong>, your minimum hours per week are <strong>{{ duty.weeklyRequirementHours }} hours</strong>.{% else %}Weekly minimum for <strong>{{ duty.rank }}</strong>: not configured.{% endif %}</p>
+    <form method="get" action="{{ request.path }}#duty-hours" data-duty-jump>
+      <input type="hidden" name="embed" value="{{ '1' if embedded else '0' }}">
+      <label for="duty-week">Jump to a specific week</label><input id="duty-week" name="duty_week" type="date" min="1971-01-01" max="{{ duty.today }}" value="{{ duty.selected }}" required>
+      <button class="secondary small-button" type="submit">Go</button>
+    </form>
+    <small>Weeks reset {{ ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'][duty.resetDay] }} at 00:00 · {{ duty.timezone }}. {% if duty.active %}On duty · totals include the active session through the latest refresh.{% endif %}</small>
+  </div>
+  <div class="duty-weeks">
+    {% for week in duty.weeks %}
+    <article class="duty-week{% if week.current %} current{% endif %}" aria-label="{{ week.label }}: {{ week.weekStart }}">
+      <h3>{{ week.label }}</h3><time datetime="{{ week.weekStart }}">{{ week.dateRange }}</time><small>{{ week.weekStart[:4] }}{% if week.weekEnd[:4] != week.weekStart[:4] %} / {{ week.weekEnd[:4] }}{% endif %}</small>
+      <dl>{% for kind in duty.dutyTypes %}<div><dt>{{ kind|title }}</dt><dd>{{ week.seconds[kind]|duty_time }}</dd></div>{% endfor %}
+        <div class="duty-total{% if week.meetsRequirement == false %} below{% elif week.meetsRequirement == true %} met{% endif %}"><dt>Total</dt><dd>{{ week.totalSeconds|duty_time }}</dd></div>
+      </dl>
+      {% if week.meetsRequirement is not none %}<small class="duty-requirement-state">{{ 'Minimum met' if week.meetsRequirement else 'Below weekly minimum' }}</small>{% endif %}
+    </article>
+    {% endfor %}
+  </div>
+  {% if duty.canCorrect %}
+  <details class="duty-corrections"><summary>Supervisor session corrections</summary>
+    <p>Sessions overlapping these five weeks (up to 100). Times are UTC; an explicit timezone offset is required. Every correction is audited.</p>
+    <div role="status" data-duty-message aria-live="polite"></div>
+    {% for item in duty.sessions %}
+    <details class="duty-session"><summary>{{ item.started_at|duty_utc }} · {{ item.duty_type|title }} · {{ item.duration_seconds|duty_time if item.ended_at is not none else 'Active' }}</summary>
+      <form action="{{ url_for('duty_correct', session_id=item.id) }}" method="post" data-duty-correction>
+        <input type="hidden" name="csrf_token" value="{{ duty.csrf }}"><input type="hidden" name="revision" value="{{ item.revision }}">
+        <label>Started (UTC)<input name="startedAt" value="{{ item.started_at|duty_utc }}" required></label>
+        <label>Ended (UTC; blank means active)<input name="endedAt" value="{{ item.ended_at|duty_utc if item.ended_at is not none else '' }}"></label>
+        <label>Duty type<select name="dutyType">{% for kind in duty.dutyTypes %}<option value="{{ kind }}" {% if item.duty_type == kind %}selected{% endif %}>{{ kind|title }}</option>{% endfor %}</select></label>
+        <label>Reason<input name="reason" minlength="5" maxlength="1000" required placeholder="Explain why this session needs correction"></label>
+        <label>Action<select name="action"><option value="correct">Save correction</option><option value="delete">Remove session from totals</option></select></label>
+        <button type="submit" class="secondary small-button">Apply correction</button>
+      </form>
+    </details>
+    {% else %}<p>No sessions in this date range.</p>{% endfor %}
+  </details>
+  {% endif %}
+  {% else %}<p class="duty-unlinked">Duty hours are unavailable until this roster employee is linked to an existing account with a Character ID.</p>{% endif %}
+</section>

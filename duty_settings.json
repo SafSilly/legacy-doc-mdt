@@ -1,0 +1,14 @@
+{
+  "week_start_day": 0,
+  "required_hours": {
+    "W": null,
+    "DW": null,
+    "AW": null,
+    "C": null,
+    "LT": null,
+    "S": null,
+    "SO": null,
+    "CO": null,
+    "CC": null
+  }
+}

@@ -1,0 +1,6 @@
+<section class="mdt-metrics" data-dashboard-home-view aria-label="Terminal overview">
+  {% set metrics = [('Personnel', personnel|length, 'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M17 4a4 4 0 0 1 0 8M22 21v-2a4 4 0 0 0-3-3.87M13 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0'), ('Announcements', announcements|length, 'M9 5H5v16h14V5h-4M9 3h6v4H9z'), ('Scheduled events', events|length, 'M8 2v4M16 2v4M3 10h18M3 5h18v17H3z'), ('Your callsign', current_user.callsign or 'Unassigned', 'M12 3 3 7v5c0 5 9 9 9 9s9-4 9-9V7z')] %}
+  {% for label, value, path in metrics %}
+  <div><i class="mdt-metric-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="{{ path }}"/></svg></i><div><span>{{ label }}</span><strong>{{ value }}</strong></div></div>
+  {% endfor %}
+</section>

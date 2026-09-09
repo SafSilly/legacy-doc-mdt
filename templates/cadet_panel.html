@@ -1,0 +1,511 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cadet Panel</title>
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='bolingbroke-logo.png') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  <script defer src="{{ url_for('static', filename='live-actions.js') }}"></script>
+</head>
+<body class="{% if request.args.get('embed') %}embedded-panel-body{% endif %}">
+  <main class="shell">
+    <nav class="top-actions">
+      {% include "_back_button.html" %}
+      <a class="button secondary" href="{{ url_for('quiz_home') }}">Quiz Site</a>
+      <a class="button secondary" href="{{ url_for('hub') }}">Hub</a>
+      <form method="post" action="{{ url_for('supervisor_logout') }}">
+        <button class="button secondary" type="submit">Log Out</button>
+      </form>
+    </nav>
+
+    <header class="hero">
+      <div class="brand-block">
+        <img class="site-logo" src="{{ url_for('static', filename='bolingbroke-logo.png') }}" alt="Bolingbroke State Penitentiary logo">
+        <div>
+          <p class="eyebrow">Cadet Access</p>
+          <h1>Cadet Panel</h1>
+          <p class="lede">Signed in as {{ current_user.display_name or current_user.username }}. Track FTO time with local timezone syncing.</p>
+        </div>
+      </div>
+      <div class="score-card">
+        <span>Status</span>
+        <strong>{% if active_timestamp %}Live{% else %}Ready{% endif %}</strong>
+        <small>timestamp</small>
+      </div>
+    </header>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <section class="flash-stack">
+          {% for category, message in messages %}
+            <div class="flash {{ category }}">{{ message }}</div>
+          {% endfor %}
+        </section>
+      {% endif %}
+    {% endwith %}
+
+    <section class="panel boxed-section cadet-account-panel">
+      <div>
+        <h2>Logged-In Cadet</h2>
+        <p>Account and cadet record tied to this panel.</p>
+      </div>
+      <div class="cadet-account-grid">
+        <div>
+          <span>Account Name</span>
+          <strong>{{ current_user.display_name or current_user.username }}</strong>
+        </div>
+        <div>
+          <span>Username</span>
+          <strong>{{ current_user.username }}</strong>
+        </div>
+        <div>
+          <span>Callsign</span>
+          <strong>{{ current_user.callsign|bracket_callsign if current_user.callsign else 'No callsign set' }}</strong>
+        </div>
+{% if not embedded %}        <div>
+          <span>Role</span>
+          <strong>{{ current_user.role|title }}</strong>
+        </div>{% endif %}
+        {% if cadet_record %}
+          <div>
+            <span>Cadet Record</span>
+            <strong>{{ cadet_record.badge_number|bracket_callsign }} {{ cadet_record.name }}</strong>
+          </div>
+          <div>
+            <span>Phase</span>
+            <strong>{{ cadet_record.phase }}</strong>
+          </div>
+          <div>
+            <span>Status</span>
+            <strong>{{ cadet_record.status }}</strong>
+          </div>
+          <div>
+            <span>Last Log</span>
+            <strong>{{ cadet_record.last_log_at or '-' }}</strong>
+          </div>
+        {% endif %}
+      </div>
+    </section>
+
+    <section class="panel custom-question-panel boxed-section cadet-time-panel cadet-timestamp-panel">
+      <div>
+        <h2>{% if active_timestamp %}Active Timestamp{% else %}Start Timestamp{% endif %}</h2>
+        <p>Your account name and callsign are added automatically. Choose the FTO you are timestamping with.</p>
+      </div>
+
+      {% if active_timestamp %}
+        <article class="cadet-time-active">
+          <div>
+            <span class="eyebrow">FTO</span>
+            <h3>{{ active_timestamp.fto_name }}</h3>
+            <p><b>Cadet:</b> {{ active_timestamp.cadet_callsign|bracket_callsign }} {{ active_timestamp.cadet_name }}</p>
+            {% if active_timestamp.paused_utc %}
+              <p><b>Status:</b> Paused by supervisor</p>
+            {% endif %}
+            <p>
+              Started
+              <time data-local-time="{{ active_timestamp.start_utc }}">{{ active_timestamp.start_utc }}</time>
+            </p>
+          </div>
+          <div class="cadet-overview-actions">
+            <a class="doc-icon-button cadet-timestamp-prompt-button" href="#cadet-self-time" title="Timestamp prompt" aria-label="Timestamp prompt">
+              <svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"></circle><path d="M12 8v5l3 2"></path></svg>
+            </a>
+            <a class="doc-icon-button cadet-evaluation-prompt-button" href="#cadet-fto-evaluation" title="FTO evaluation form" aria-label="FTO evaluation form">
+              <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M7 4h10v16H7z"></path><path d="M9 2h6v4H9zM10 10h4M10 14h4M10 18h3"></path></svg>
+            </a>
+          </div>
+        </article>
+      {% else %}
+        <article class="cadet-time-active">
+          <div>
+            <span class="eyebrow">Ready</span>
+            <h3>{{ current_user.callsign|bracket_callsign if current_user.callsign else 'No callsign set' }} {{ current_user.display_name or current_user.username }}</h3>
+            <p>Open the timestamp prompt to search for an FTO and start your session.</p>
+          </div>
+          <div class="cadet-overview-actions">
+            <a class="doc-icon-button cadet-timestamp-prompt-button" href="#cadet-self-time" title="Timestamp prompt" aria-label="Timestamp prompt">
+              <svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"></circle><path d="M12 8v5l3 2"></path></svg>
+            </a>
+            <a class="doc-icon-button cadet-evaluation-prompt-button" href="#cadet-fto-evaluation" title="FTO evaluation form" aria-label="FTO evaluation form">
+              <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M7 4h10v16H7z"></path><path d="M9 2h6v4H9zM10 10h4M10 14h4M10 18h3"></path></svg>
+            </a>
+          </div>
+        </article>
+      {% endif %}
+    </section>
+
+    <div class="doc-modal" id="cadet-self-time">
+      <a class="doc-modal-backdrop" href="#" aria-label="Close"></a>
+      <section class="doc-modal-card doc-time-modal" role="dialog" aria-labelledby="cadet-self-time-title" data-cadet-time-modal>
+        <header>
+          <h2 id="cadet-self-time-title">Cadet Timestamps - {{ current_user.callsign|bracket_callsign if current_user.callsign else 'No Callsign' }} - {{ current_user.display_name or current_user.username }}</h2>
+          <a href="#" aria-label="Close">x</a>
+        </header>
+        <div class="doc-session-bar">
+          <div>
+            <strong>Active Session</strong>
+            <span>
+              {% if active_timestamp %}
+                {{ active_timestamp.fto_name }} started <time data-local-time="{{ active_timestamp.start_utc }}">{{ active_timestamp.start_utc }}</time>
+              {% else %}
+                None running
+              {% endif %}
+            </span>
+          </div>
+          <div class="doc-session-actions">
+            <form method="post" action="{{ url_for('start_cadet_timestamp') }}" data-managed-timestamp-start>
+              <input type="hidden" name="start_timezone" data-managed-start-timezone>
+              <input type="hidden" name="fto_name" data-selected-fto required>
+              <button class="button secondary small-button" type="submit" data-start-button {% if active_timestamp %}disabled{% endif %}>Start</button>
+            </form>
+            {% if active_timestamp %}
+              <form method="post" action="{{ url_for('stop_cadet_timestamp', timestamp_id=active_timestamp.id) }}" data-managed-timestamp-stop>
+                <input type="hidden" name="stop_utc" data-stop-utc>
+                <input type="hidden" name="stop_timezone" data-managed-stop-timezone>
+                <button class="button secondary small-button" type="submit">Stop</button>
+              </form>
+            {% else %}
+              <form data-managed-timestamp-stop>
+                <button class="button secondary small-button" type="button" disabled>Stop</button>
+              </form>
+            {% endif %}
+          </div>
+        </div>
+        <div class="doc-time-grid cadet-self-time-grid">
+          <section class="doc-officer-picker" data-officer-picker>
+            <h3>Officer Picker</h3>
+            <input type="search" placeholder="Search by callsign or officer name..." data-officer-search>
+            <div class="doc-picker-status">
+              <span data-picker-help>Search Admin Accounts to choose an officer.</span>
+              <strong>Selected: <span data-selected-count>0</span></strong>
+            </div>
+            <div class="doc-officer-list">
+              {% for officer in timestamp_officers %}
+                <button type="button" data-fto-option="{{ officer.name }}" data-officer-search-value="{{ officer.callsign }} {{ officer.display_name }} {{ officer.role }}" hidden>
+                  <span>{{ officer.callsign or 'No callsign' }}</span>
+                  <strong>{{ officer.display_name }}</strong>
+                  <small>{{ officer.role }}</small>
+                </button>
+              {% else %}
+                <p class="muted-note">No eligible officer accounts were found.</p>
+              {% endfor %}
+              {% if timestamp_officers %}
+                <p class="muted-note" data-officer-no-results hidden>No officers match that search.</p>
+              {% endif %}
+            </div>
+          </section>
+          <section class="doc-recent-sessions">
+            <div class="doc-recent-sessions-head">
+              <h3>Recent Sessions</h3>
+              <span>{{ timestamps|length }} logged</span>
+            </div>
+            <div class="doc-session-list" id="cadet-timestamp-history" data-live-url="{{ url_for('live_cadet_timestamps') }}">
+              {% for item in timestamps[:12] %}
+                <article>
+                  <div>
+                    <strong>{% if item.stop_utc %}Completed{% elif item.paused_utc %}Paused{% else %}Active{% endif %} · #{{ item.id }}</strong>
+                    <time data-duration data-start="{{ item.start_utc }}" data-stop="{{ item.stop_utc or '' }}" data-paused-total="{{ item.paused_total_seconds or 0 }}" data-paused-at="{{ item.paused_utc or '' }}">-</time>
+                  </div>
+                  <p><b>Officer:</b> {{ item.fto_name }}</p>
+                  <small>
+                    <time data-local-time="{{ item.start_utc }}">{{ item.start_utc }}</time>
+                    →
+                    {% if item.stop_utc %}<time data-local-time="{{ item.stop_utc }}">{{ item.stop_utc }}</time>{% else %}Now{% endif %}
+                  </small>
+                </article>
+              {% else %}
+                <p class="muted-note" data-empty-session>No timestamp sessions yet.</p>
+              {% endfor %}
+            </div>
+          </section>
+        </div>
+      </section>
+    </div>
+
+    <div class="doc-modal" id="cadet-fto-evaluation">
+      <a class="doc-modal-backdrop" href="#" aria-label="Close"></a>
+      <section class="doc-modal-card cadet-evaluation-modal" role="dialog" aria-labelledby="cadet-fto-evaluation-title">
+        <header>
+          <div>
+            <h2 id="cadet-fto-evaluation-title">FTO Evaluation Form</h2>
+            <p>Submit feedback on your training session. Your identity is added automatically.</p>
+          </div>
+          <a href="#" aria-label="Close">x</a>
+        </header>
+        <form method="post" action="{{ url_for('submit_fto_evaluation') }}" class="custom-question-form cadet-evaluation-form">
+        <label>
+          <span>What FTO did you clock on with? *</span>
+          <select name="fto_name" required>
+            <option value="">Choose FTO</option>
+            {% for fto in fto_options %}
+              <option value="{{ fto }}">{{ fto }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <label>
+          <span>On a scale from 1-10, how would you rate your trainers ability to teach? *</span>
+          <select name="teaching_rating" required>
+            <option value="">Choose rating</option>
+            {% for rating in range(1, 11) %}
+              <option value="{{ rating }}">{{ rating }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <label>
+          <span>On a scale from 1-10, how helpful did you find your training session today? *</span>
+          <select name="helpful_rating" required>
+            <option value="">Choose rating</option>
+            {% for rating in range(1, 11) %}
+              <option value="{{ rating }}">{{ rating }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <label>
+          <span>On a scale from 1-10, how would you rate the overall training that you have experienced within the department so far?</span>
+          <select name="overall_rating">
+            <option value="">Choose rating</option>
+            {% for rating in range(1, 11) %}
+              <option value="{{ rating }}">{{ rating }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <label class="wide-field">
+          <span>Is there anything else you'd like to add?</span>
+          <textarea name="feedback" rows="5" placeholder="Is there anything else you would like to share, such as feedback, suggestions, or anything you do not agree with?"></textarea>
+        </label>
+          <button type="submit">Submit Evaluation</button>
+        </form>
+      </section>
+    </div>
+
+  </main>
+
+  <script>
+    let timestampHistory = document.querySelector("#cadet-timestamp-history");
+    const timezoneOptions = [
+      "America/New_York",
+      "America/Chicago",
+      "America/Denver",
+      "America/Los_Angeles",
+      "America/Phoenix",
+      "America/Anchorage",
+      "Pacific/Honolulu",
+      "UTC",
+      "Europe/London",
+      "Europe/Berlin",
+      "Australia/Sydney",
+    ];
+    const browserTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+
+    function ensureTimezoneOption(select, timezone) {
+      if (!timezone) return;
+      if (!Array.from(select.options).some((option) => option.value === timezone)) {
+        select.add(new Option(timezone, timezone), 0);
+      }
+    }
+
+    document.querySelectorAll("[data-timezone-select]").forEach((select) => {
+      ensureTimezoneOption(select, browserTimezone);
+      timezoneOptions.forEach((timezone) => ensureTimezoneOption(select, timezone));
+      select.value = browserTimezone;
+    });
+
+    function dateForInput(value) {
+      const date = value ? new Date(value) : new Date();
+      return Number.isNaN(date.getTime()) ? new Date() : date;
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "").replace(/[&<>"']/g, (char) => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;",
+      }[char]));
+    }
+
+    function formatLocalTime(value) {
+      const date = dateForInput(value);
+      return new Intl.DateTimeFormat(undefined, {
+        dateStyle: "medium",
+        timeStyle: "short",
+        timeZone: browserTimezone,
+      }).format(date);
+    }
+
+    function bindOfficerPicker(modal) {
+      if (modal.dataset.pickerBound === "true") return;
+      modal.dataset.pickerBound = "true";
+      const search = modal.querySelector("[data-officer-search]");
+      const options = Array.from(modal.querySelectorAll("[data-fto-option]"));
+      const selectedInput = modal.querySelector("[data-selected-fto]");
+      const selectedCount = modal.querySelector("[data-selected-count]");
+      const noResults = modal.querySelector("[data-officer-no-results]");
+      const startButton = modal.querySelector("[data-start-button]");
+      const startLocked = Boolean(startButton?.disabled);
+
+      function setSelected(option) {
+        options.forEach((item) => item.classList.toggle("is-selected", item === option));
+        if (selectedInput) selectedInput.value = option?.dataset.ftoOption || "";
+        if (selectedCount) selectedCount.textContent = option ? "1" : "0";
+        if (startButton && !startLocked) {
+          startButton.disabled = !option;
+        }
+      }
+
+      function filterOptions() {
+        const query = (search?.value || "").trim().toLowerCase();
+        let visibleCount = 0;
+        options.forEach((option) => {
+          const searchValue = `${option.dataset.officerSearchValue || ""} ${option.textContent || ""}`.toLowerCase();
+          const matches = Boolean(query) && searchValue.includes(query);
+          option.hidden = !matches;
+          if (matches) visibleCount += 1;
+        });
+        if (noResults) noResults.hidden = !query || visibleCount > 0;
+      }
+
+      setSelected(null);
+      filterOptions();
+      search?.addEventListener("input", filterOptions);
+      options.forEach((option) => {
+        option.addEventListener("click", () => {
+          setSelected(option);
+          if (search) search.value = option.dataset.ftoOption || option.textContent.trim();
+          filterOptions();
+        });
+      });
+    }
+
+    function formatTimestampNodes(root = document) {
+      root.querySelectorAll("[data-local-time]").forEach((node) => {
+        node.textContent = formatLocalTime(node.dataset.localTime);
+      });
+      root.querySelectorAll("[data-duration]").forEach((node) => {
+        node.textContent = durationText(node.dataset.start, node.dataset.stop, node.dataset.pausedTotal, node.dataset.pausedAt);
+      });
+    }
+
+    async function submitTimestampControl(form) {
+      const button = form.querySelector("button[type='submit']");
+      const originalLabel = button?.textContent || "";
+      if (button) {
+        button.disabled = true;
+        button.classList.add("timestamp-action-pending");
+        button.textContent = form.matches("[data-managed-timestamp-start]") ? "Starting..." : "Stopping...";
+      }
+      try {
+        const response = await fetch(form.action, {
+          method: "POST",
+          body: new FormData(form),
+          headers: { "X-Requested-With": "fetch" },
+        });
+        if (!response.ok) throw new Error("Timestamp request failed.");
+        const nextDocument = new DOMParser().parseFromString(await response.text(), "text/html");
+        const currentPanel = document.querySelector(".cadet-time-panel");
+        const nextPanel = nextDocument.querySelector(".cadet-time-panel");
+        const currentModal = document.querySelector("#cadet-self-time");
+        const nextModal = nextDocument.querySelector("#cadet-self-time");
+        const currentStatus = document.querySelector(".hero .score-card");
+        const nextStatus = nextDocument.querySelector(".hero .score-card");
+        if (!currentPanel || !nextPanel || !currentModal || !nextModal) {
+          throw new Error("Updated timestamp view was unavailable.");
+        }
+        currentPanel.replaceWith(nextPanel);
+        currentModal.replaceWith(nextModal);
+        timestampHistory = document.querySelector("#cadet-timestamp-history");
+        if (currentStatus && nextStatus) currentStatus.replaceWith(nextStatus);
+        document.querySelector(".flash-stack[data-timestamp-flash]")?.remove();
+        const nextFlash = nextDocument.querySelector(".flash-stack");
+        if (nextFlash) {
+          nextFlash.dataset.timestampFlash = "true";
+          document.querySelector(".cadet-time-panel")?.before(nextFlash);
+          window.setTimeout(() => nextFlash.remove(), 3200);
+        }
+        bindTimestampControls();
+        formatTimestampNodes();
+        await refreshTimestampHistory();
+      } catch (error) {
+        if (button) {
+          button.disabled = false;
+          button.classList.remove("timestamp-action-pending");
+          button.textContent = originalLabel;
+        }
+      }
+    }
+
+    function bindTimestampControls() {
+      document.querySelectorAll("[data-cadet-time-modal]").forEach(bindOfficerPicker);
+      document.querySelectorAll("[data-managed-timestamp-start], [data-managed-timestamp-stop]").forEach((form) => {
+        if (form.dataset.timestampBound === "true") return;
+        form.dataset.timestampBound = "true";
+        form.addEventListener("submit", (event) => {
+          const isStart = form.matches("[data-managed-timestamp-start]");
+          const timezone = form.querySelector(isStart ? "[data-managed-start-timezone]" : "[data-managed-stop-timezone]");
+          if (timezone) timezone.value = browserTimezone;
+          const stopUtc = form.querySelector("[data-stop-utc]");
+          if (stopUtc) stopUtc.value = new Date().toISOString();
+          const selectedFto = form.querySelector("[data-selected-fto]");
+          if (isStart && selectedFto && !selectedFto.value) {
+            event.preventDefault();
+            form.closest("[data-cadet-time-modal]")?.querySelector("[data-officer-search]")?.focus();
+            return;
+          }
+          event.preventDefault();
+          submitTimestampControl(form);
+        });
+      });
+    }
+
+    function durationText(startValue, stopValue, pausedTotalSeconds = 0, pausedAt = "") {
+      const start = dateForInput(startValue);
+      const stop = stopValue ? dateForInput(stopValue) : new Date();
+      let pausedMs = Number(pausedTotalSeconds || 0) * 1000;
+      if (pausedAt && !stopValue) {
+        pausedMs += Math.max(0, new Date() - dateForInput(pausedAt));
+      } else if (pausedAt && stopValue) {
+        pausedMs += Math.max(0, stop - dateForInput(pausedAt));
+      }
+      const minutes = Math.max(0, Math.round((stop - start - pausedMs) / 60000));
+      const hours = Math.floor(minutes / 60);
+      const remainder = minutes % 60;
+      if (hours && remainder) return `${hours}h ${remainder}m`;
+      if (hours) return `${hours}h`;
+      return `${remainder}m`;
+    }
+
+    function timestampCard(item) {
+      const stopped = item.stop_utc ? formatLocalTime(item.stop_utc) : item.is_paused ? "Paused" : "Active";
+      const status = item.stop_utc ? "Completed" : item.is_paused ? "Paused" : "Active";
+      return `
+        <article>
+          <div>
+            <strong>${escapeHtml(status)} &middot; #${escapeHtml(item.id)}</strong>
+            <time>${escapeHtml(durationText(item.start_utc, item.stop_utc || "", item.paused_total_seconds || 0, item.paused_utc || ""))}</time>
+          </div>
+          <p><b>Officer:</b> ${escapeHtml(item.fto_name)}</p>
+          <small>${escapeHtml(formatLocalTime(item.start_utc))} &rarr; ${escapeHtml(stopped)}</small>
+        </article>
+      `;
+    }
+
+    async function refreshTimestampHistory() {
+      if (!timestampHistory) return;
+      const response = await fetch(timestampHistory.dataset.liveUrl, { headers: { Accept: "application/json" } });
+      if (!response.ok) return;
+      const data = await response.json();
+      timestampHistory.innerHTML = data.timestamps.length
+        ? data.timestamps.slice(0, 12).map(timestampCard).join("")
+        : '<p class="muted-note" data-empty-session>No timestamp sessions yet.</p>';
+    }
+
+    bindTimestampControls();
+    formatTimestampNodes();
+    refreshTimestampHistory();
+    setInterval(() => { if (!document.hidden) refreshTimestampHistory(); }, 5000);
+  </script>
+</body>
+</html>

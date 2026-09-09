@@ -1,0 +1,9 @@
+{% extends 'mdt_auth_base.html' %}
+{% block content %}
+<form method="post" class="terminal-auth-form">
+<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+<label for="login-cid">CID</label><div class="terminal-input"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm7 8a7 7 0 0 0-14 0"/></svg><input id="login-cid" name="username" autocomplete="username" placeholder="Enter your CID" required autofocus></div>
+<label for="login-password">Password</label><div class="terminal-input"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10V8a5 5 0 0 1 10 0v2M6 10h12v10H6z"/></svg><input id="login-password" type="password" name="password" autocomplete="current-password" placeholder="Enter your password" required><button type="button" class="terminal-reveal" data-toggle-password="login-password" aria-label="Show password" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+<button type="submit" class="terminal-submit"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h5v16h-5M3 12h12m-5-5 5 5-5 5"/></svg> Sign In</button>
+</form><div class="terminal-divider"><span>Need help?</span></div><a class="terminal-help" href="{{ url_for('mdt_forgot_password') }}">Forgot password / reset code</a>
+{% endblock %}

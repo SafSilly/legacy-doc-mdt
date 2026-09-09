@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ profile.display_name }} · DOC Profile</title>
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='bolingbroke-logo.png') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='mdt-duty.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='mdt-profile.css') }}">
+  <script defer src="{{ url_for('static', filename='mdt-duty.js') }}"></script>
+</head>
+<body class="doc-profile {% if embedded %}embedded-panel-body{% endif %}">
+  <main class="shell employee-profile-shell">
+    {% set record = profile_record(profile) %}
+    <header class="employee-profile-toolbar">
+      <div class="profile-title-row">
+        {% if request.endpoint == "employee_profile_by_callsign" %}
+        <a class="employee-profile-back" href="{{ url_for('employee_roster_page', embed='1' if embedded else None) }}"><span aria-hidden="true">←</span> Back</a>
+        {% endif %}
+        <h1>{{ profile.callsign|bracket_callsign }} {{ profile.display_name }}</h1>
+        {% for division in profile.division_badges %}<img class="profile-division-icon" src="{{ url_for('static', filename=division.image) }}" alt="{{ division.name }} roster member" title="{{ division.name }} roster member">{% endfor %}
+        <span class="employee-profile-status {{ profile.status|lower|replace('-', '')|replace(' ', '') }}">{{ profile.status }}</span>
+      </div>
+      <div class="profile-refresh-controls">
+        <small class="roster-sync-status" data-roster-sync="{{ profile.roster_sync.synced_at }}">Updated just now</small>
+        <span class="employee-profile-refresh-status" data-profile-refresh-status role="status" aria-live="polite"></span>
+        <button class="employee-profile-refresh" type="button" data-profile-refresh><span aria-hidden="true">↻</span> Refresh</button>
+      </div>
+    </header>
+
+
+    {% if not profile.roster_linked %}
+      <aside class="employee-profile-link-notice"><strong>Roster not linked</strong><span>Certifications will sync when this callsign matches the official roster.</span></aside>
+    {% elif not profile.roster_available %}
+      <aside class="employee-profile-link-notice warning"><strong>Roster temporarily unavailable</strong><span>Showing the most recently cached profile information.</span></aside>
+    {% endif %}
+
+    <section class="employee-profile-grid">
+      <div class="profile-details-column">
+      <article class="employee-profile-panel employee-profile-details">
+        <header><h2>Officer Details</h2></header>
+        <dl>
+          <div><dt>Rank</dt><dd>{{ record.rank if record else profile.rank }}</dd></div>
+          <div><dt>CID</dt><dd>{{ record.cid if record else 'Not listed' }}</dd></div>
+          <div><dt>Hired</dt><dd>{{ profile.joined }}</dd></div>
+          <div><dt>Last Promotion</dt><dd>{{ profile.last_promoted }}</dd></div>
+          <div><dt>Phone</dt><dd>{{ record.phone if record else 'Not listed' }}</dd></div>
+          <div><dt>Timezone</dt><dd>{{ profile.timezone }}</dd></div>
+        </dl>
+      </article>
+
+      {% set earned_certifications = profile.certifications|selectattr("status_class", "equalto", "certified")|list %}
+      {% if earned_certifications %}
+      <details class="employee-profile-panel employee-profile-certifications">
+        <summary>Certifications <span>View qualifications</span></summary>
+        <div class="employee-certification-list">
+          {% for certification in earned_certifications %}
+            <div class="employee-certification-card {{ certification.status_class }}">
+              <span class="employee-certification-icon" aria-hidden="true">{% if certification.key == 'beanbag' %}B{% elif certification.key == 'revolver' %}R{% elif certification.key == 'smg' %}S{% elif certification.key == 'rifle' %}RF{% else %}SG{% endif %}</span>
+              <div><strong>{{ certification.label }}</strong></div>
+              <b>{{ certification.status }}</b>
+            </div>
+          {% endfor %}
+        </div>
+        <footer><span>Synced from the official DOC roster.</span></footer>
+      </details>
+      {% endif %}
+      </div>
+    {% include '_mdt_duty.html' %}
+    {% include '_mdt_notes.html' %}
+    </section>
+  </main>
+  <script>
+    document.querySelectorAll('[data-note-form]').forEach(form => form.addEventListener('submit', async event => {
+      event.preventDefault(); const button = form.querySelector('button'); const status = form.querySelector('[role=status]');
+      button.disabled = true; status.textContent = 'Saving...';
+      try { const response = await fetch(form.action, {method:'POST', body:new FormData(form)});
+        if (!response.ok) { const data = await response.json().catch(() => ({})); throw new Error(data.error || 'Unable to save this note. Refresh and try again.'); }
+        window.location.reload();
+      } catch(error) { status.textContent = error.message; button.disabled = false; }
+    }));
+    document.querySelector("[data-profile-refresh]")?.addEventListener("click", async (event) => {
+      const button = event.currentTarget;
+      const status = document.querySelector("[data-profile-refresh-status]");
+      button.disabled = true;
+      button.setAttribute("aria-busy", "true");
+      if (status) status.textContent = "Syncing roster…";
+      try {
+        const response = await fetch("{{ url_for('refresh_live_roster', roster_name='department') }}", {
+          method: "POST",
+          headers: { "X-Requested-With": "profile-refresh" },
+        });
+        if (!response.ok) throw new Error(`Roster refresh failed (${response.status})`);
+        window.location.reload();
+      } catch (error) {
+        button.disabled = false;
+        button.removeAttribute("aria-busy");
+        if (status) status.textContent = "Refresh failed — try again";
+      }
+    });
+    document.querySelectorAll("[data-roster-sync]").forEach((item) => {
+      const syncedAt = Number(item.dataset.rosterSync || 0) * 1000;
+      if (!syncedAt) { item.textContent = "Awaiting roster sync"; return; }
+      const minutes = Math.max(0, Math.floor((Date.now() - syncedAt) / 60000));
+      item.textContent = minutes < 1 ? "Updated just now" : `Updated ${minutes} min ago`;
+    });
+  </script>
+</body>
+</html>

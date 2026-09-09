@@ -1,0 +1,621 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>DOC Dashboard</title>
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='bolingbroke-logo.png') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  <script defer src="{{ url_for('static', filename='live-actions.js') }}"></script>
+</head>
+<body>
+  <button class="dashboard-mobile-toggle" type="button" data-sidebar-toggle aria-expanded="false" aria-controls="dashboard-sidebar"><span aria-hidden="true">☰</span><span>Menu</span></button>
+  <button class="dashboard-mobile-scrim" type="button" data-sidebar-scrim hidden aria-label="Close navigation"></button>
+  <main class="shell dashboard-shell">
+    <aside class="dashboard-sidebar" id="dashboard-sidebar">
+      <div class="dashboard-brand">
+        <img src="{{ url_for('static', filename='bolingbroke-logo.png') }}" alt="DOC logo">
+        <div>
+          <strong>DOC</strong>
+          <span>{{ current_user.display_name or current_user.username }}</span>
+        </div>
+        <button class="dashboard-sidebar-close" type="button" data-sidebar-close aria-label="Close navigation">×</button>
+      </div>
+      <nav class="dashboard-nav" aria-label="Dashboard navigation">
+        <a class="active" href="{{ url_for('hub') }}" data-dashboard-home><span>Dashboard</span></a>
+        <details open>
+          <summary><span>Employee Hub</span></summary>
+          <div>
+            <a href="{{ url_for('applications_page') }}" data-dashboard-panel data-panel-title="Applications" data-panel-url="{{ url_for('applications_page', embed=1) }}">Applications</a>
+            <a href="{{ url_for('quiz_home') }}" data-dashboard-panel data-panel-title="Exams" data-panel-url="{{ url_for('quiz_home', embed=1) }}">Exams</a>
+            <a href="{{ url_for('cadet_training') }}" data-dashboard-panel data-panel-title="Employee - Training" data-panel-url="{{ url_for('cadet_training', embed=1) }}">Training</a>
+          </div>
+        </details>
+        <details>
+          <summary><span>Rosters</span></summary>
+          <div>
+            <a href="{{ url_for('employee_roster_page') }}" data-dashboard-panel data-panel-title="Department Roster" data-panel-url="{{ url_for('employee_roster_page', embed=1) }}">Department Roster</a>
+            {% if current_user.role in ['owner', 'admin', 'supervisor'] or current_user.division_rank in ftp_division_ranks or current_user.additional_division_rank in ftp_division_ranks %}<a href="{{ url_for('fto_panel', _anchor='ftp-roster-tab') }}" data-dashboard-panel data-panel-title="FTP Roster" data-panel-url="{{ url_for('fto_panel', embed=1, _anchor='ftp-roster-tab') }}">FTP Roster</a>{% endif %}
+            {% if current_user.role in ['owner', 'admin'] or current_user.division_rank in ert_division_ranks or current_user.additional_division_rank in ert_division_ranks %}<a href="{{ url_for('ert_panel') }}" data-dashboard-panel data-panel-title="ERT Roster" data-panel-url="{{ url_for('ert_panel', embed=1) }}">ERT Roster</a>{% endif %}
+          </div>
+        </details>
+        {% if current_user.role in ['owner', 'admin'] %}
+          <details>
+            <summary><span>Admin Panel</span></summary>
+            <div>
+              <a href="{{ url_for('admin_panel', _anchor='accounts-tab') }}" data-dashboard-panel data-panel-title="Admin - Accounts" data-panel-url="{{ url_for('admin_panel', embed=1, _anchor='accounts-tab') }}">Accounts</a>
+              <a href="{{ url_for('admin_panel', _anchor='builtin-tab') }}" data-dashboard-panel data-panel-title="Admin - Built-In Questions" data-panel-url="{{ url_for('admin_panel', embed=1, _anchor='builtin-tab') }}">Built-In Questions</a>
+              <a href="{{ url_for('admin_panel', _anchor='add-custom-tab') }}" data-dashboard-panel data-panel-title="Admin - Add Custom Question" data-panel-url="{{ url_for('admin_panel', embed=1, _anchor='add-custom-tab') }}">Add Custom Question</a>
+              <a href="{{ url_for('admin_panel', _anchor='custom-tab') }}" data-dashboard-panel data-panel-title="Admin - Custom Questions" data-panel-url="{{ url_for('admin_panel', embed=1, _anchor='custom-tab') }}">Custom Questions</a>
+              <a href="{{ url_for('admin_panel', _anchor='complaints-tab') }}" data-dashboard-panel data-panel-title="Admin - Complaints" data-panel-url="{{ url_for('admin_panel', embed=1, _anchor='complaints-tab') }}">Complaints</a>
+            </div>
+          </details>
+        {% endif %}
+        {% if current_user.role == 'owner' %}
+          <details>
+            <summary><span>Developer Panel</span></summary>
+            <div>
+              <a href="{{ url_for('dev_panel') }}" data-dashboard-panel data-panel-title="Developer - Overview" data-panel-url="{{ url_for('dev_panel', embed=1) }}">Overview</a>
+            </div>
+          </details>
+        {% endif %}
+        {% if current_user.role in ['owner', 'admin', 'supervisor'] %}
+          <details>
+            <summary><span>Supervisor Panel</span></summary>
+            <div>
+              <a href="{{ url_for('supervisor_panel', _anchor='overview-tab') }}" data-dashboard-panel data-panel-title="Supervisor - Exam Info" data-panel-url="{{ url_for('supervisor_panel', embed=1, _anchor='overview-tab') }}">Exam Info</a>
+              <a href="{{ url_for('supervisor_panel', _anchor='attempts-tab') }}" data-dashboard-panel data-panel-title="Supervisor - Exam Attempts" data-panel-url="{{ url_for('supervisor_panel', embed=1, _anchor='attempts-tab') }}">Exam Attempts</a>
+              <a href="{{ url_for('supervisor_panel', _anchor='requests-tab') }}" data-dashboard-panel data-panel-title="Supervisor - Test Requests" data-panel-url="{{ url_for('supervisor_panel', embed=1, _anchor='requests-tab') }}">Test Requests</a>
+              <a href="{{ url_for('supervisor_panel', _anchor='timestamps-tab') }}" data-dashboard-panel data-panel-title="Supervisor - Cadet Timestamps" data-panel-url="{{ url_for('supervisor_panel', embed=1, _anchor='timestamps-tab') }}">Cadet Timestamps</a>
+              <a href="{{ url_for('supervisor_panel', _anchor='timestamp-followups-tab') }}" data-dashboard-panel data-panel-title="Supervisor - FTP Follow-ups" data-panel-url="{{ url_for('supervisor_panel', embed=1, _anchor='timestamp-followups-tab') }}">FTP Follow-ups</a>
+              <a href="{{ url_for('supervisor_panel', _anchor='fto-evaluations-tab') }}" data-dashboard-panel data-panel-title="Supervisor - FTP Evaluations" data-panel-url="{{ url_for('supervisor_panel', embed=1, _anchor='fto-evaluations-tab') }}">FTP Evaluations</a>
+            </div>
+          </details>
+        {% endif %}
+        {% if current_user.role in ['owner', 'admin', 'supervisor'] or current_user.division_rank in ftp_division_ranks or current_user.additional_division_rank in ftp_division_ranks %}
+          <details>
+            <summary><span>FTP Panel</span></summary>
+            <div>
+              <a href="{{ url_for('fto_panel', _anchor='fto-active-tab') }}" data-dashboard-panel data-panel-title="FTP - Active Cadets" data-panel-url="{{ url_for('fto_panel', embed=1, _anchor='fto-active-tab') }}">Active Cadets</a>
+              <a href="{{ url_for('fto_panel', _anchor='fto-cadet-archive-tab') }}" data-dashboard-panel data-panel-title="FTP - Archived Cadets" data-panel-url="{{ url_for('fto_panel', embed=1, _anchor='fto-cadet-archive-tab') }}">Archived Cadets</a>
+              <a href="{{ url_for('fto_panel', _anchor='fto-timestamps-tab') }}" data-dashboard-panel data-panel-title="FTP - Timestamp Logs" data-panel-url="{{ url_for('fto_panel', embed=1, _anchor='fto-timestamps-tab') }}">Timestamp Logs</a>
+              <a href="{{ url_for('fto_panel', _anchor='fto-training-results-tab') }}" data-dashboard-panel data-panel-title="FTP - Training Results" data-panel-url="{{ url_for('fto_panel', embed=1, _anchor='fto-training-results-tab') }}">Training Results</a>
+              {% if current_user.role in ['owner', 'admin'] or current_user.division_rank in ['ftp_supervisor', 'ftp_command'] or current_user.additional_division_rank in ['ftp_supervisor', 'ftp_command'] %}<a href="{{ url_for('fto_panel', _anchor='ftp-applications-tab') }}" data-dashboard-panel data-panel-title="FTP - Applications" data-panel-url="{{ url_for('fto_panel', embed=1, _anchor='ftp-applications-tab') }}">FTP Applications</a>{% endif %}
+            </div>
+          </details>
+        {% endif %}
+        {% if current_user.role in ['owner', 'admin'] or current_user.division_rank in ert_division_ranks or current_user.additional_division_rank in ert_division_ranks %}
+          <details>
+            <summary><span>ERT Panel</span></summary>
+            <div>
+              <a href="{{ url_for('ert_panel', _anchor='ert-training-tab') }}" data-dashboard-panel data-panel-title="ERT - Training Logs" data-panel-url="{{ url_for('ert_panel', embed=1, _anchor='ert-training-tab') }}">Training Logs</a>
+              <a href="{{ url_for('ert_panel', _anchor='ert-certifications-tab') }}" data-dashboard-panel data-panel-title="ERT - Certifications" data-panel-url="{{ url_for('ert_panel', embed=1, _anchor='ert-certifications-tab') }}">Certifications</a>
+              {% if current_user.role in ['owner', 'admin'] or current_user.division_rank in ['ert_supervisor', 'ert_command'] or current_user.additional_division_rank in ['ert_supervisor', 'ert_command'] %}<a href="{{ url_for('ert_panel', _anchor='ert-applications-tab') }}" data-dashboard-panel data-panel-title="ERT - Applications" data-panel-url="{{ url_for('ert_panel', embed=1, _anchor='ert-applications-tab') }}">ERT Applications</a>{% endif %}
+            </div>
+          </details>
+        {% endif %}
+        {% if current_user.role in ['owner', 'admin', 'cadet'] %}
+          <details>
+            <summary><span>Cadet Panel</span></summary>
+            <div>
+              <a href="{{ url_for('cadet_panel') }}" data-dashboard-panel data-panel-title="Cadet - Overview" data-panel-url="{{ url_for('cadet_panel', embed=1) }}">Overview</a>
+            </div>
+          </details>
+        {% endif %}
+      </nav>
+      <div class="dashboard-sidebar-footer">
+        <a href="{{ url_for('employee_profile') }}" data-dashboard-panel data-panel-title="Profile" data-panel-url="{{ url_for('employee_profile', embed=1) }}">Profile</a>
+        <a href="{{ url_for('index') }}">Home</a>
+        <form method="post" action="{{ url_for('supervisor_logout') }}">
+          <button class="button secondary" type="submit">Log Out</button>
+        </form>
+      </div>
+    </aside>
+
+    <section class="dashboard-main">
+      <section class="dashboard-embedded-panel" data-dashboard-embedded hidden>
+        <div class="dashboard-embedded-head">
+          <div>
+            <p class="eyebrow" data-dashboard-embedded-group>Panel View</p>
+            <h1 data-dashboard-embedded-title>Panel</h1>
+          </div>
+        </div>
+        <iframe title="Dashboard panel" data-dashboard-frame></iframe>
+      </section>
+
+      <header class="dashboard-header" data-dashboard-home-view>
+        <div class="dashboard-header-copy">
+          <p class="eyebrow">Department Hub</p>
+          <h1>Dashboard</h1>
+          <p class="lede">Welcome back, <strong>{{ current_user.display_name or current_user.username }}</strong>. Review department activity, open queues, and your next actions.</p>
+        </div>
+        <div class="dashboard-header-actions">
+          <div class="dashboard-access-summary">
+            <small>Your access</small>
+            <span class="dashboard-role-chip">{{ current_user.role|title }}</span>
+          </div>
+          <button class="dashboard-notification-button" type="button" data-notification-toggle aria-expanded="false" aria-controls="dashboard-notification-center">
+            <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M18 9a6 6 0 1 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg>
+            <span class="sr-only">Open activity notifications</span>
+            {% if notifications %}<b>{{ notifications|length }}</b>{% endif %}
+          </button>
+        </div>
+      </header>
+
+      <aside class="dashboard-notification-center" id="dashboard-notification-center" data-notification-center hidden aria-label="Notifications">
+        <header>
+          <div>
+            <span class="eyebrow">Notification center</span>
+          </div>
+          <button type="button" data-notification-close aria-label="Close notification center" title="Close notification center"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="m7 7 10 10M17 7 7 17"/></svg></button>
+        </header>
+        <div class="dashboard-notification-list">
+          {% for notification in notifications %}
+            <article class="dashboard-notification {{ notification.tone }}">
+              <div class="dashboard-notification-mark" aria-hidden="true"></div>
+              <div>
+                <span>{{ notification.label }}</span>
+                <strong>{{ notification.title }}</strong>
+                <p>{{ notification.detail }}</p>
+                <small>{{ notification.time }}</small>
+                <div class="dashboard-notification-actions">
+                  {% if notification.panel %}<button type="button" data-notification-panel="{{ notification.panel }}"{% if notification.get('url') %} data-notification-url="{{ notification.url }}"{% endif %}>Open {{ notification.panel.split(' - ')|last }}</button>{% endif %}
+                  <form method="post" action="{{ url_for('dismiss_hub_notification') }}"><input type="hidden" name="notification_key" value="{{ notification.key }}"><input type="hidden" name="persistent_id" value="{{ notification.persistent_id }}"><input type="hidden" name="timezone" value="{{ calendar_view.timezone }}"><button class="dashboard-notification-delete" type="submit" aria-label="Delete notification" title="Delete notification"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3m-8 0 1 13h8l1-13M10 11v5m4-5v5"/></svg></button></form>
+                </div>
+              </div>
+            </article>
+          {% else %}
+            <div class="dashboard-notification-empty"><strong>You’re all caught up.</strong><p>New approvals, decisions, and training results will appear here.</p></div>
+          {% endfor %}
+        </div>
+      </aside>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <section class="flash-stack">
+            {% for category, message in messages %}
+              <div class="flash {{ category }}">{{ message }}</div>
+            {% endfor %}
+          </section>
+        {% endif %}
+      {% endwith %}
+
+      <section class="dashboard-grid" data-dashboard-home-view>
+        <article class="dashboard-panel" id="announcements">
+          <div class="dashboard-panel-head">
+            <div>
+              <h2>Announcements</h2>
+              <p>Department notices, training updates, and urgent alerts.</p>
+            </div>
+            {% if can_manage_dashboard %}
+              <a class="button secondary dashboard-panel-action dashboard-quick-add" href="#add-dashboard-announcement" aria-label="New announcement" title="New announcement">
+                <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+              </a>
+            {% endif %}
+          </div>
+          <div class="dashboard-announcement-summary">
+            <div>
+              <span>Department Bulletin</span>
+              <strong>{{ announcements|length }} active notice{% if announcements|length != 1 %}s{% endif %}</strong>
+            </div>
+            <div class="dashboard-announcement-legend" aria-label="Announcement priorities">
+              <span><i class="normal"></i>General</span>
+              <span><i class="training"></i>Training</span>
+              <span><i class="urgent"></i>Urgent</span>
+            </div>
+          </div>
+          <div class="dashboard-announcement-list">
+            {% for announcement in announcements %}
+              <article class="dashboard-announcement {{ announcement.priority }}">
+                <div class="dashboard-announcement-content">
+                  <header>
+                    <div>
+                      <span class="dashboard-announcement-priority">{{ 'General' if announcement.priority == 'normal' else announcement.priority|title }}</span>
+                      <strong>{{ announcement.title }}</strong>
+                    </div>
+                    <time>{{ announcement.created_at }}</time>
+                  </header>
+                  <p>{{ announcement.body }}</p>
+                  <footer>
+                    <span>Posted by <b>{{ announcement.author_callsign|bracket_callsign if announcement.author_callsign }} {{ announcement.author_name }}</b></span>
+                  </footer>
+                </div>
+              </article>
+            {% else %}
+              <div class="dashboard-announcement-empty">
+                <span aria-hidden="true">
+                  <svg viewBox="0 0 24 24"><path d="M5 10v4m2-6.5v9l10 3V4.5l-10 3ZM7 14h-2a2 2 0 0 1 0-4h2m2 6 1.5 4h3L12 17"/></svg>
+                </span>
+                <strong>No active announcements</strong>
+                <p>Department notices and important updates will appear here.</p>
+                {% if can_manage_dashboard %}<a href="#add-dashboard-announcement">Post the first announcement</a>{% endif %}
+              </div>
+            {% endfor %}
+          </div>
+        </article>
+
+        <article class="dashboard-panel" id="calendar">
+          <div class="dashboard-panel-head">
+            <div>
+              <h2>Calendar</h2>
+              <p>Planned events and scheduling.</p>
+            </div>
+            {% if can_manage_dashboard %}
+              <a class="button secondary dashboard-panel-action dashboard-quick-add" href="#add-dashboard-event" aria-label="Add calendar event" title="Add calendar event">
+                <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+              </a>
+            {% endif %}
+          </div>
+          <div class="dashboard-calendar-card">
+            <div class="dashboard-calendar-title">
+              <div>
+                <span>Department Schedule</span>
+                <strong>{{ calendar_view.month_name }} {{ calendar_view.year }}</strong>
+              </div>
+              <nav class="calendar-month-nav" aria-label="Calendar month navigation">
+                <a href="{{ url_for('hub', calendar_month=calendar_view.previous_month, timezone=calendar_view.timezone, _anchor='calendar') }}" aria-label="Previous month">&larr;</a>
+                {% if not calendar_view.is_current_month %}<a class="calendar-today-link" href="{{ url_for('hub', timezone=calendar_view.timezone, _anchor='calendar') }}">Today</a>{% endif %}
+                <a href="{{ url_for('hub', calendar_month=calendar_view.next_month, timezone=calendar_view.timezone, _anchor='calendar') }}" aria-label="Next month">&rarr;</a>
+              </nav>
+            </div>
+            <div class="calendar-month-summary"><span><b>{{ calendar_view.month_events|length }}</b> scheduled event{% if calendar_view.month_events|length != 1 %}s{% endif %}</span><small>Select any date to open its daily schedule.</small></div>
+            <div class="dashboard-calendar-weekdays">
+              <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
+            </div>
+            <div class="dashboard-calendar-grid">
+              {% for week in calendar_view.weeks %}
+                {% for cell in week %}
+                  <div class="dashboard-calendar-cell{% if not cell.in_month %} outside-month{% endif %}{% if cell.is_today %} today{% endif %}{% if cell.events %} has-events{% endif %}">
+                    <a href="#calendar-day-{{ cell.iso_date }}" aria-label="View {{ cell.label }}">
+                      <span class="calendar-date-number">{{ cell.day }}</span>
+                      {% if cell.events %}<div class="calendar-cell-events">{% for event in cell.events[:2] %}<small class="{{ event.event_type|lower|replace(' ', '-') }}"><i></i>{{ event.title }}</small>{% endfor %}{% if cell.events|length > 2 %}<b>+{{ cell.events|length - 2 }} more</b>{% endif %}</div>{% endif %}
+                    </a>
+                  </div>
+                {% endfor %}
+              {% endfor %}
+            </div>
+          </div>
+        </article>
+
+        {% for week in calendar_view.weeks %}
+          {% for cell in week %}
+            <div class="doc-modal dashboard-day-modal" id="calendar-day-{{ cell.iso_date }}">
+              <a class="doc-modal-backdrop" href="#calendar" aria-label="Close calendar date"></a>
+              <section class="doc-modal-card dashboard-day-card" role="dialog" aria-labelledby="calendar-day-title-{{ cell.iso_date }}">
+                <header>
+                  <div>
+                    <span class="dashboard-day-kicker">Daily Schedule</span>
+                    <h2 id="calendar-day-title-{{ cell.iso_date }}">{{ cell.label }}</h2>
+                    <p>{{ cell.events|length }} event{% if cell.events|length != 1 %}s{% endif %}</p>
+                  </div>
+                  <a href="#calendar" aria-label="Close">×</a>
+                </header>
+                <div class="dashboard-day-events">
+                  {% for event in cell.events %}
+                    <article class="dashboard-day-event {{ event.event_type|lower|replace(' ', '-') }}">
+                      <div class="dashboard-day-event-type"><i></i>{{ event.event_type }}</div>
+                      <div class="dashboard-day-event-body">
+                        <div>
+                          <strong>{{ event.title }}</strong>
+                          <time{% if event.local_iso %} datetime="{{ event.local_iso }}"{% endif %}>{{ event.display_time }}</time>
+                        </div>
+                        {% if event.notes %}<p>{{ event.notes }}</p>{% endif %}
+                        {% if can_manage_dashboard %}<form method="post" action="{{ url_for('delete_dashboard_event', event_id=event.id) }}" data-confirm="Delete this calendar event?"><input type="hidden" name="calendar_month" value="{{ calendar_view.month_value }}"><input type="hidden" name="timezone" value="{{ calendar_view.timezone }}"><button class="calendar-event-delete" type="submit">Delete Event</button></form>{% endif %}
+                      </div>
+                    </article>
+                  {% else %}
+                    <div class="dashboard-day-empty">
+                      <span aria-hidden="true">◇</span>
+                      <strong>No events scheduled</strong>
+                      <p>This date is currently clear.</p>
+                      {% if can_manage_dashboard %}<a class="button secondary small-button" href="#add-dashboard-event" data-calendar-add-date="{{ cell.iso_date }}">Add an Event</a>{% endif %}
+                    </div>
+                  {% endfor %}
+                </div>
+              </section>
+            </div>
+          {% endfor %}
+        {% endfor %}
+      </section>
+
+      {% if can_manage_dashboard %}
+        <div class="doc-modal" id="add-dashboard-announcement">
+          <a class="doc-modal-backdrop" href="#announcements" aria-label="Close"></a>
+          <section class="doc-modal-card dashboard-event-modal dashboard-announcement-modal" role="dialog" aria-labelledby="add-dashboard-announcement-title">
+            <header>
+              <div>
+                <span class="dashboard-day-kicker">Department Bulletin</span>
+                <h2 id="add-dashboard-announcement-title">New Announcement</h2>
+                <p>Share an update with everyone who uses the hub.</p>
+              </div>
+              <a href="#announcements" aria-label="Close">×</a>
+            </header>
+            <form class="dashboard-modal-form dashboard-announcement-form" method="post" action="{{ url_for('add_dashboard_announcement') }}">
+              <label>
+                <span>Title</span>
+                <input name="title" placeholder="Announcement title" required>
+              </label>
+              <label>
+                <span>Priority</span>
+                <select name="priority">
+                  <option value="normal">Normal</option>
+                  <option value="training">Training</option>
+                  <option value="urgent">Urgent</option>
+                </select>
+              </label>
+              <label class="wide-field">
+                <span>Message</span>
+                <textarea name="body" rows="5" placeholder="Write announcement..." required></textarea>
+              </label>
+              <button type="submit">Post Announcement</button>
+            </form>
+          </section>
+        </div>
+
+        <div class="doc-modal" id="add-dashboard-event">
+          <a class="doc-modal-backdrop" href="#calendar" aria-label="Close"></a>
+          <section class="doc-modal-card dashboard-event-modal" role="dialog" aria-labelledby="add-dashboard-event-title">
+            <header>
+              <h2 id="add-dashboard-event-title">Add Calendar Event</h2>
+              <a href="#calendar" aria-label="Close">x</a>
+            </header>
+            <form class="dashboard-modal-form" method="post" action="{{ url_for('add_dashboard_event') }}">
+              <input type="hidden" name="calendar_month" value="{{ calendar_view.month_value }}">
+              <input type="hidden" name="event_timezone" value="{{ calendar_view.timezone }}" data-calendar-timezone>
+              <label>
+                <span>Event Title</span>
+                <input name="title" placeholder="Training, meeting, operation..." required>
+              </label>
+              <label>
+                <span>Date</span>
+                <input type="date" name="event_date" value="{{ calendar_view.today_iso if calendar_view.is_current_month else '' }}" required data-calendar-event-date>
+              </label>
+              <label>
+                <span>Time</span>
+                <input type="time" name="event_time">
+              </label>
+              <label>
+                <span>Type</span>
+                <select name="event_type">
+                  <option>General</option>
+                  <option>Training</option>
+                </select>
+              </label>
+              <label class="wide-field">
+                <span>Notes</span>
+                <textarea name="notes" rows="4" placeholder="Notes"></textarea>
+              </label>
+              <button type="submit">Add Event</button>
+            </form>
+          </section>
+        </div>
+      {% endif %}
+    </section>
+  </main>
+  <script>
+    const dashboardHomeLink = document.querySelector("[data-dashboard-home]");
+    const dashboardHomeViews = document.querySelectorAll("[data-dashboard-home-view]");
+    const dashboardEmbedded = document.querySelector("[data-dashboard-embedded]");
+    const dashboardEmbeddedHead = dashboardEmbedded?.querySelector(".dashboard-embedded-head");
+    const dashboardFrame = document.querySelector("[data-dashboard-frame]");
+    const dashboardTitle = document.querySelector("[data-dashboard-embedded-title]");
+    const dashboardPanelLinks = document.querySelectorAll("[data-dashboard-panel]");
+    const sidebarToggle = document.querySelector("[data-sidebar-toggle]");
+    const sidebarScrim = document.querySelector("[data-sidebar-scrim]");
+    const sidebarClose = document.querySelector("[data-sidebar-close]");
+    const notificationCenter = document.querySelector("[data-notification-center]");
+    const notificationToggle = document.querySelector("[data-notification-toggle]");
+    const hubUrl = "{{ url_for('hub') }}";
+    const employeeRosterPath = "{{ url_for('employee_roster_page') }}";
+    const employeeProfilePath = "{{ url_for('employee_profile') }}";
+    const employeeProfileCallsignPath = "{{ url_for('employee_profile_by_callsign', callsign='__callsign__') }}";
+    const detectedCalendarTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+    const timezoneUrl = new URL(window.location.href);
+    if (timezoneUrl.searchParams.get("timezone") !== detectedCalendarTimezone) {
+      timezoneUrl.searchParams.set("timezone", detectedCalendarTimezone);
+      window.location.replace(timezoneUrl.toString());
+    }
+
+    document.querySelectorAll("[data-calendar-add-date]").forEach((link) => {
+      link.addEventListener("click", () => {
+        const dateInput = document.querySelector("[data-calendar-event-date]");
+        if (dateInput) dateInput.value = link.dataset.calendarAddDate || "";
+      });
+    });
+
+    function setDashboardActive(activeLink) {
+      document.querySelectorAll(".dashboard-nav a").forEach((link) => link.classList.remove("active"));
+      activeLink?.classList.add("active");
+    }
+
+    function setSidebarOpen(open) {
+      document.body.classList.toggle("dashboard-sidebar-open", open);
+      sidebarToggle?.setAttribute("aria-expanded", String(open));
+      if (sidebarScrim) sidebarScrim.hidden = !open;
+    }
+
+    sidebarToggle?.addEventListener("click", () => setSidebarOpen(!document.body.classList.contains("dashboard-sidebar-open")));
+    sidebarScrim?.addEventListener("click", () => setSidebarOpen(false));
+    sidebarClose?.addEventListener("click", () => setSidebarOpen(false));
+
+    function panelSlug(link) {
+      return (link.dataset.panelTitle || link.textContent.trim()).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+    }
+
+    function panelHash(link) {
+      return `#panel-${panelSlug(link)}`;
+    }
+
+    function syncPanelLinkHref(link) {
+      link.href = `${hubUrl}${panelHash(link)}`;
+    }
+
+    function dashboardPanelForUrl(targetUrl) {
+      if (targetUrl.origin !== window.location.origin) return null;
+      const candidates = [...dashboardPanelLinks].filter((link) => {
+        const panelUrl = new URL(link.dataset.panelUrl, window.location.origin);
+        return panelUrl.pathname === targetUrl.pathname;
+      });
+      if (!candidates.length) return null;
+      if (targetUrl.hash) {
+        return candidates.find((link) => new URL(link.dataset.panelUrl, window.location.origin).hash === targetUrl.hash) || null;
+      }
+      return candidates.length === 1 ? candidates[0] : null;
+    }
+
+    function bindEmbeddedPanelNavigation() {
+      let frameDocument;
+      try {
+        frameDocument = dashboardFrame?.contentDocument;
+      } catch (error) {
+        return;
+      }
+      if (!frameDocument || frameDocument.documentElement.dataset.hubNavigationBound === "true") return;
+      frameDocument.documentElement.dataset.hubNavigationBound = "true";
+      frameDocument.addEventListener("click", (event) => {
+        if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+        const anchor = event.target.closest("a[href]");
+        if (!anchor || anchor.hasAttribute("download") || anchor.target === "_blank") return;
+        const targetUrl = new URL(anchor.href, window.location.origin);
+        if (targetUrl.origin === window.location.origin && targetUrl.pathname === new URL(hubUrl, window.location.origin).pathname) {
+          event.preventDefault();
+          history.replaceState(null, "", hubUrl);
+          openDashboardHome();
+          return;
+        }
+        const panelLink = dashboardPanelForUrl(targetUrl);
+        if (!panelLink) return;
+        event.preventDefault();
+        openDashboardPanel(panelLink);
+      });
+    }
+
+    function openDashboardHome() {
+      dashboardHomeViews.forEach((item) => item.hidden = false);
+      if (dashboardEmbedded) {
+        dashboardEmbedded.hidden = true;
+      }
+      if (dashboardFrame) {
+        dashboardFrame.removeAttribute("src");
+        dashboardFrame.classList.remove("compact-panel");
+      }
+      setDashboardActive(dashboardHomeLink);
+    }
+
+    function setEmbeddedInnerHeader(hidden) {
+      dashboardEmbedded?.classList.toggle("uses-inner-header", hidden);
+      if (dashboardEmbeddedHead) dashboardEmbeddedHead.style.display = hidden ? "none" : "";
+    }
+
+    function openDashboardPanel(link, pushState = true, panelUrlOverride = "", forceInnerHeader = false) {
+      if (!dashboardEmbedded || !dashboardFrame) return;
+      dashboardHomeViews.forEach((item) => item.hidden = true);
+      dashboardEmbedded.hidden = false;
+      const fullPanelTitle = link.dataset.panelTitle || link.textContent.trim();
+      const usesInnerHeader = forceInnerHeader || panelSlug(link) === "employee-training";
+      setEmbeddedInnerHeader(usesInnerHeader);
+      const [panelGroup, ...panelNameParts] = fullPanelTitle.split(" - ");
+      const panelGroupLabel = document.querySelector("[data-dashboard-embedded-group]");
+      dashboardTitle.textContent = panelNameParts.length ? panelNameParts.join(" - ") : fullPanelTitle;
+      if (panelGroupLabel) {
+        panelGroupLabel.textContent = panelNameParts.length ? `${panelGroup} Panel` : "Panel View";
+      }
+      dashboardFrame.classList.toggle("compact-panel", link.hasAttribute("data-panel-compact"));
+      const panelUrl = new URL(panelUrlOverride || link.dataset.panelUrl, window.location.origin);
+      panelUrl.searchParams.set("panel_view", panelSlug(link));
+      panelUrl.searchParams.set("panel_refresh", Date.now().toString());
+      dashboardFrame.src = panelUrl.toString();
+      setDashboardActive(link);
+      link.closest("details")?.setAttribute("open", "");
+      if (pushState) {
+        history.replaceState(null, "", panelHash(link));
+      }
+    }
+
+    dashboardHomeLink?.addEventListener("click", (event) => {
+      event.preventDefault();
+      history.replaceState(null, "", "{{ url_for('hub') }}");
+      openDashboardHome();
+    });
+
+    dashboardPanelLinks.forEach((link) => {
+      syncPanelLinkHref(link);
+      link.addEventListener("click", (event) => {
+        event.preventDefault();
+        openDashboardPanel(link);
+        setSidebarOpen(false);
+      });
+      link.addEventListener("auxclick", (event) => {
+        if (event.button !== 1) return;
+        event.preventDefault();
+        openDashboardPanel(link);
+      });
+    });
+
+    function setNotificationCenter(open) {
+      if (!notificationCenter || !notificationToggle) return;
+      notificationCenter.hidden = !open;
+      notificationToggle.setAttribute("aria-expanded", String(open));
+    }
+
+    notificationToggle?.addEventListener("click", () => setNotificationCenter(notificationCenter?.hidden));
+    document.querySelector("[data-notification-close]")?.addEventListener("click", () => setNotificationCenter(false));
+    document.querySelectorAll("[data-notification-panel]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const panel = [...dashboardPanelLinks].find((link) => link.dataset.panelTitle === button.dataset.notificationPanel);
+        if (panel) openDashboardPanel(panel, true, button.dataset.notificationUrl || "");
+        setNotificationCenter(false);
+      });
+    });
+
+    dashboardFrame?.addEventListener("load", () => {
+      try {
+        const frameUrl = new URL(dashboardFrame.contentWindow.location.href);
+        const embeddedPaths = ["/admin", "/dev", "/supervisor", "/division", "/division/applications", "/fto", "/ert", "/cadet", "/cadet/training", "/employee", "/employee/roster", "/applications", "/quiz"];
+        const isEmployeeProfile = frameUrl.pathname === employeeProfilePath || frameUrl.pathname.startsWith(`${employeeProfilePath}/`);
+        if (frameUrl.origin === window.location.origin && (embeddedPaths.includes(frameUrl.pathname) || isEmployeeProfile) && !frameUrl.searchParams.has("embed")) {
+          frameUrl.searchParams.set("embed", "1");
+          dashboardFrame.src = frameUrl.toString();
+          return;
+        }
+        if (frameUrl.origin === window.location.origin && isEmployeeProfile) {
+          setEmbeddedInnerHeader(true);
+          if (frameUrl.pathname.startsWith(`${employeeProfilePath}/`)) {
+            const callsign = decodeURIComponent(frameUrl.pathname.slice(employeeProfilePath.length + 1));
+            history.replaceState(null, "", `#profile-${encodeURIComponent(callsign)}`);
+          }
+        } else if (frameUrl.origin === window.location.origin && frameUrl.pathname === employeeRosterPath) {
+          setEmbeddedInnerHeader(false);
+          history.replaceState(null, "", "#panel-department-roster");
+        }
+        bindEmbeddedPanelNavigation();
+      } catch (error) {
+        return;
+      }
+    });
+
+    function openRequestedPanelFromHash() {
+      if (window.location.hash.startsWith("#profile-")) {
+        const rosterPanel = [...dashboardPanelLinks].find((link) => link.dataset.panelTitle === "Department Roster");
+        const callsign = decodeURIComponent(window.location.hash.slice("#profile-".length));
+        if (rosterPanel && callsign) {
+          const profilePath = employeeProfileCallsignPath.replace("__callsign__", encodeURIComponent(callsign));
+          openDashboardPanel(rosterPanel, false, `${profilePath}?embed=1`, true);
+          return;
+        }
+      }
+      const requestedPanel = window.location.hash.startsWith("#panel-")
+        ? [...dashboardPanelLinks].find((link) => panelHash(link) === window.location.hash)
+        : null;
+      if (requestedPanel) {
+        openDashboardPanel(requestedPanel, false);
+      }
+    }
+
+    openRequestedPanelFromHash();
+    window.addEventListener("hashchange", openRequestedPanelFromHash);
+    window.setTimeout(openRequestedPanelFromHash, 0);
+
+  </script>
+</body>
+</html>

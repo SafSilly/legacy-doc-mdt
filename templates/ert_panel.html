@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ERT Panel</title>
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='bolingbroke-logo.png') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body class="{% if request.args.get('embed') %}embedded-panel-body{% endif %}">
+  <main class="shell ert-workspace">
+    <nav class="top-actions">
+      {% include "_back_button.html" %}
+      <a class="button secondary" href="{{ url_for('hub') }}">Hub</a>
+    </nav>
+    <header class="hero ert-hero">
+      <div class="brand-block">
+        <img class="site-logo" src="{{ url_for('static', filename='bolingbroke-logo.png') }}" alt="Bolingbroke State Penitentiary logo">
+        <div>
+          <p class="eyebrow">Emergency Response Team</p>
+          <h1>ERT Panel</h1>
+          <p class="lede">Team roster, command visibility, and active response readiness.</p>
+        </div>
+      </div>
+      <div class="score-card"><span>ERT Personnel</span><strong>{{ members|length }}</strong><small>{% if roster_is_live %}live roster{% else %}assigned{% endif %}</small></div>
+    </header>
+
+    <section class="panel tab-shell ert-panel-tabs boxed-section">
+      <input type="radio" name="ert-panel-tab" id="ert-overview-tab" checked>
+      <input type="radio" name="ert-panel-tab" id="ert-training-tab">
+      <input type="radio" name="ert-panel-tab" id="ert-certifications-tab">
+      {% if can_review_ert_applications %}<input type="radio" name="ert-panel-tab" id="ert-applications-tab">{% endif %}
+      <div class="tab-buttons">
+        <label for="ert-overview-tab">ERT Roster</label>
+        <label for="ert-training-tab">Training Logs</label>
+        <label for="ert-certifications-tab">Certifications</label>
+        {% if can_review_ert_applications %}<label for="ert-applications-tab">ERT Applications</label>{% endif %}
+      </div>
+
+      <section class="tab-panel ert-overview-panel">
+        <section class="ert-roster-panel boxed-section">
+          <header><div><span>Emergency Response Team</span><h2>ERT Roster</h2><p>{% if roster_is_live %}Synced from the ERT roster sheet. Vacant positions are hidden.{% else %}Using ERT assignments from Admin Accounts while the roster sheet is unavailable.{% endif %}</p></div><div class="roster-panel-actions"><small class="roster-sync-status" data-roster-sync="{{ roster_sync.synced_at }}">Updated just now</small><small>{{ members|length }} member{% if members|length != 1 %}s{% endif %}</small><button class="roster-refresh-button" type="button" data-roster-refresh="ert" aria-label="Refresh ERT roster" title="Refresh ERT roster"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0 2 5M20 4v7h-7"/></svg></button></div></header>
+          <div class="ert-member-grid">
+            {% for member in members %}
+              <article class="ert-member-card{% if (member.badge or member.name)|lower in roster_sync.changed_keys %} roster-member-changed{% endif %}"><div><strong>{{ member.name }}</strong><span>{{ member.badge|bracket_callsign if member.badge else 'No badge number' }}</span><small>{{ member.status }}{% if member.timezone %} · {{ member.timezone }}{% endif %}</small></div><b>{{ member.role }}</b></article>
+            {% else %}
+              <article class="workspace-empty"><strong>No active ERT members listed</strong><span>Active, non-vacant members from the ERT sheet will appear here.</span></article>
+            {% endfor %}
+          </div>
+        </section>
+      </section>
+      {% include "_ert_training_logs.html" %}
+      {% include "_ert_certifications.html" %}
+      {% if can_review_ert_applications %}
+        {% set queue_applications = ert_applications %}{% set queue_short = 'ERT' %}{% set queue_title = 'Emergency Response Team' %}
+        {% include "_division_application_queue.html" %}
+      {% endif %}
+    </section>
+  </main>
+  <script>
+    const ertTabIds = ["ert-overview-tab", "ert-training-tab", "ert-certifications-tab", "ert-applications-tab"];
+    function setErtTab(tabId, replace = false) {
+      if (!ertTabIds.includes(tabId)) return;
+      const tab = document.getElementById(tabId);
+      if (!tab) return;
+      tab.checked = true;
+      const nextUrl = `${window.location.pathname}${window.location.search}#${tabId}`;
+      if (replace) window.history.replaceState(null, "", nextUrl);
+      else window.history.pushState(null, "", nextUrl);
+    }
+    const initialErtTab = window.location.hash.slice(1);
+    if (ertTabIds.includes(initialErtTab)) setErtTab(initialErtTab, true);
+    ertTabIds.forEach((tabId) => document.querySelector(`label[for="${tabId}"]`)?.addEventListener("click", () => setErtTab(tabId)));
+    document.addEventListener("submit", (event) => {
+      const form = event.target.closest("form");
+      if (!form || form.method.toLowerCase() !== "post") return;
+      let input = form.querySelector('input[name="active_tab"]');
+      if (!input) { input = document.createElement("input"); input.type = "hidden"; input.name = "active_tab"; form.append(input); }
+      input.value = document.querySelector('input[name="ert-panel-tab"]:checked')?.id || "ert-overview-tab";
+    });
+    document.querySelector("[data-roster-refresh]")?.addEventListener("click", async (event) => {
+      const button = event.currentTarget;
+      button.disabled = true;
+      try { await fetch("{{ url_for('refresh_live_roster', roster_name='ert') }}", { method: "POST" }); window.location.reload(); }
+      catch (error) { button.disabled = false; }
+    });
+    document.querySelectorAll("[data-roster-sync]").forEach((item) => {
+      const syncedAt = Number(item.dataset.rosterSync || 0) * 1000;
+      if (!syncedAt) { item.textContent = "Awaiting sync"; return; }
+      const minutes = Math.max(0, Math.floor((Date.now() - syncedAt) / 60000));
+      item.textContent = minutes < 1 ? "Updated just now" : `Updated ${minutes} min ago`;
+    });
+  </script>
+</body>
+</html>

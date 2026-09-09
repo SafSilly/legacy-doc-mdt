@@ -1,0 +1,17 @@
+<nav class="home-site-nav public-site-directory" aria-label="Website directory">
+  <a class="home-site-brand" href="{{ url_for('index') }}">
+    <img src="{{ url_for('static', filename='bolingbroke-logo.png') }}" alt="">
+    <span><strong>San Andreas DOC</strong><small>Public directory</small></span>
+  </a>
+  <div class="home-site-links">
+    <a class="{% if request.endpoint == 'index' %}active{% endif %}" href="{{ url_for('index') }}"{% if request.endpoint == 'index' %} aria-current="page"{% endif %}>Home</a>
+    <a class="{% if request.endpoint == 'staff_page' %}active{% endif %}" href="{{ url_for('staff_page') }}"{% if request.endpoint == 'staff_page' %} aria-current="page"{% endif %}>Staff</a>
+    <a class="{% if request.endpoint == 'divisions_page' %}active{% endif %}" href="{{ url_for('divisions_page') }}"{% if request.endpoint == 'divisions_page' %} aria-current="page"{% endif %}>Divisions</a>
+    <a class="{% if request.endpoint == 'hiring_page' %}active{% endif %}" href="{{ url_for('hiring_page') }}"{% if request.endpoint == 'hiring_page' %} aria-current="page"{% endif %}>Hiring</a>
+    {% if session.get('supervisor_user_id') %}
+      <a class="button small-button" href="{{ url_for('hub') }}">Open Hub</a>
+    {% else %}
+      <a class="button small-button" href="{{ url_for('supervisor_login') }}">Employee Login</a>
+    {% endif %}
+  </div>
+</nav>

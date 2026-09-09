@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>DOC Hiring</title>
+  {% include "_social_meta.html" %}
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='bolingbroke-logo.png') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+  <main class="shell hiring-shell">
+    {% include "_public_directory.html" %}
+
+    <header class="hero hiring-hero">
+      <div class="brand-block">
+        <img class="site-logo" src="{{ url_for('static', filename='bolingbroke-logo.png') }}" alt="Bolingbroke State Penitentiary logo">
+        <div>
+          <p class="eyebrow">Recruitment</p>
+          <h1>Hiring</h1>
+          <p class="lede">Start a career with the San Andreas Department of Corrections.</p>
+        </div>
+      </div>
+    </header>
+
+    <section class="panel hiring-panel">
+      <div class="hiring-photo">
+        <img src="{{ url_for('static', filename='album/doc-album-1.webp') }}" alt="DOC officers conducting prison operations" loading="lazy" decoding="async">
+      </div>
+      <div class="hiring-copy">
+        <p class="eyebrow">Join DOC</p>
+        <h2>Join The Department of Corrections</h2>
+        <p>Are you ready for a rewarding career that makes a difference? We are looking for dedicated, resilient individuals to join our team as Corrections Officers. In this vital role, you will help maintain safety, support rehabilitation, and foster positive change inside Bolingbroke.</p>
+        <div class="hiring-offers">
+          <h3>What We Offer</h3>
+          <ul>
+            <li>Comprehensive training and development</li>
+            <li>Opportunities for career advancement</li>
+            <li>Hands-on correctional operations experience</li>
+            <li>A chance to make a real impact</li>
+          </ul>
+        </div>
+        <p>Bring your integrity, commitment, and compassion. Start a career that matters and apply today to become a Corrections Officer.</p>
+      </div>
+    </section>
+
+    <section class="hiring-actions">
+      <a class="button staff-button" href="https://www.legacy-roleplay.com/index.php?form/department-of-corrections-application.11/select" target="_blank" rel="noopener noreferrer">Join Us</a>
+      <a class="button secondary" href="https://www.legacy-roleplay.com/index.php?form/department-of-corrections-application.11/select" target="_blank" rel="noopener noreferrer">Reinstatement</a>
+    </section>
+
+    {% include "_site_footer.html" %}
+  </main>
+</body>
+</html>

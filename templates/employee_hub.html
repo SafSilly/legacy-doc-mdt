@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Employee Hub</title>
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='bolingbroke-logo.png') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body class="{% if request.args.get('embed') %}embedded-panel-body{% endif %}">
+  <main class="shell">
+    <nav class="top-actions">
+      {% include "_back_button.html" %}
+      <a class="button secondary" href="{{ url_for('index') }}">Home</a>
+      <a class="button secondary" href="{{ url_for('hub') }}">Hub</a>
+      <form method="post" action="{{ url_for('supervisor_logout') }}">
+        <button class="button secondary" type="submit">Log Out</button>
+      </form>
+    </nav>
+
+    <header class="hero">
+      <div class="brand-block">
+        <img class="site-logo" src="{{ url_for('static', filename='bolingbroke-logo.png') }}" alt="Bolingbroke State Penitentiary logo">
+        <div>
+          <p class="eyebrow">Employee Access</p>
+          <h1>Employee Hub</h1>
+          <p class="lede">Signed in as {{ current_user.display_name or current_user.username }}. Open exams, training, or applications.</p>
+        </div>
+      </div>
+{% if not embedded %}      <div class="score-card">
+        <span>Role</span>
+        <strong>{{ current_user.role|title }}</strong>
+        <small>access</small>
+      </div>{% endif %}
+    </header>
+
+    <section class="panel boxed-section hub-panel">
+      <div>
+        <h2>Employee Tools</h2>
+        <p>Common DOC links for applications, training, and exam access.</p>
+      </div>
+      <div class="hub-grid employee-grid">
+        <a class="hub-card" href="{{ url_for('applications_page') }}">
+          <span>Applications</span>
+          <h3>Applications</h3>
+          <p>Open the available DOC application forms.</p>
+        </a>
+        <a class="hub-card" href="{{ url_for('quiz_home') }}">
+          <span>Certification</span>
+          <h3>Exams</h3>
+          <p>Request supervisor access to formal DOC certification exams.</p>
+        </a>
+        <a class="hub-card" href="{{ url_for('cadet_training') }}">
+          <span>Knowledge Center</span>
+          <h3>Training</h3>
+          <p>Practice SOP topics, the full SOP bank, and DOC 10-codes.</p>
+        </a>
+        <a class="hub-card" href="{{ url_for('employee_roster_page') }}">
+          <span>Department Directory</span>
+          <h3>Roster</h3>
+          <p>View current command, low command, and supervisory staff.</p>
+        </a>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

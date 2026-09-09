@@ -1,0 +1,276 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% if selected_quiz %}{{ selected_quiz.title }}{% else %}DOC Certification Exams{% endif %}</title>
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='bolingbroke-logo.png') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body class="quiz-page{% if request.args.get('embed') %} embedded-panel-body{% endif %}">
+  <main class="shell">
+    <nav class="top-actions">
+      {% include "_back_button.html" %}
+      <a class="button secondary" href="{{ url_for('index') }}">Home</a>
+      {% if session.get('supervisor_user_id') %}
+        <a class="button secondary" href="{{ url_for('hub') }}">Hub</a>
+      {% else %}
+        <a class="button secondary" href="{{ url_for('supervisor_login') }}">Supervisor Login</a>
+      {% endif %}
+    </nav>
+
+    <header class="hero">
+      <div class="brand-block">
+        <img class="site-logo" src="{{ url_for('static', filename='bolingbroke-logo.png') }}" alt="Bolingbroke State Penitentiary logo">
+        <div>
+        <p class="eyebrow">San Andreas Department of Corrections</p>
+        <h1>{% if selected_quiz %}{{ selected_quiz.title }}{% else %}DOC Certification Exams{% endif %}</h1>
+        <p class="lede">
+          {% if selected_quiz %}
+            {{ selected_quiz.summary }}
+          {% else %}
+            Request access to a formal DOC certification exam.
+          {% endif %}
+        </p>
+        </div>
+      </div>
+      <div class="score-card">
+        {% if results %}
+          <span>Score</span>
+          <strong>{{ results.score }}%</strong>
+          <small>{{ results.correct }} of {{ results.total }} correct</small>
+        {% elif ready_to_start %}
+          <span>Questions</span>
+          <strong>{{ progress.total }}</strong>
+          <small>Ready when you are.</small>
+        {% elif selected_quiz %}
+          <span>Question</span>
+          <strong>{{ progress.current }}</strong>
+          <small>of {{ progress.total }}</small>
+        {% else %}
+          <span>Exams</span>
+          <strong>{{ quizzes|length }}</strong>
+          <small>Choose one to begin.</small>
+        {% endif %}
+      </div>
+    </header>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <section class="flash-stack">
+          {% for category, message in messages %}
+            <div class="flash {{ category }}">{{ message }}</div>
+          {% endfor %}
+        </section>
+      {% endif %}
+    {% endwith %}
+
+    {% if not selected_quiz %}
+    <section class="quiz-library-head">
+      <div><p class="eyebrow">Certification Center</p><h2>Choose an Exam</h2></div>
+      <p>Formal exams require supervisor approval. Full SOP and 10-code practice are now available under Training.</p>
+    </section>
+    <section class="training-practice-grid exam-library-grid">
+      {% for quiz in quizzes %}
+        <button type="button" class="training-practice-card exam-library-card" data-quiz-launch="{{ quiz.slug }}">
+          <div><span>{{ "%02d"|format(loop.index) }}</span><small>{{ quiz.count }} questions</small></div>
+          <h3>{{ quiz.title }}</h3>
+          <p>{{ quiz.summary }}</p>
+          {% if quiz.passing_score %}
+            <i>Supervisor approval · {{ quiz.passing_score }}% required</i>
+          {% else %}
+            <i>Practice · instant results</i>
+          {% endif %}
+          <b>Open Exam <span>→</span></b>
+        </button>
+      {% endfor %}
+    </section>
+    {% for quiz in quizzes %}
+      <div class="training-quiz-modal quiz-launch-modal" data-quiz-launch-modal="{{ quiz.slug }}" hidden>
+        <button class="training-modal-backdrop" type="button" data-quiz-launch-close aria-label="Close exam request"></button>
+        <section class="training-question-set quiz-launch-card" role="dialog" aria-modal="true" aria-labelledby="quiz-launch-title-{{ quiz.slug }}">
+          <header>
+            <div><p class="eyebrow">Certification Exam &middot; {{ quiz.difficulty }}</p><h2 id="quiz-launch-title-{{ quiz.slug }}">{{ quiz.title }}</h2><p>{{ quiz.summary }}</p></div>
+            <button type="button" class="training-modal-close" data-quiz-launch-close aria-label="Close exam request">&times;</button>
+          </header>
+          <div class="quiz-launch-body">
+            <div class="quiz-launch-overview"><span>{{ quiz.count }} questions</span><strong>{{ quiz.passing_score }}% required</strong><p>A supervisor must approve your request before the exam can begin.</p></div>
+            <form method="post" action="{{ url_for('start_quiz', slug=quiz.slug) }}" class="quiz-launch-form" data-quiz-start-form target="quiz-session-{{ quiz.slug }}">
+              <label><span>Name</span><input name="trainee_name" value="{{ identity_values.get('trainee_name', '') }}" {% if 'trainee_name' in readonly_fields %}readonly{% endif %} required></label>
+              <label><span>Callsign</span><input name="callsign" value="{{ identity_values.get('callsign', '') }}" {% if 'callsign' in readonly_fields %}readonly{% endif %} required></label>
+              <button type="submit">Request Exam Access</button>
+            </form>
+          </div>
+          <button type="button" class="quiz-session-close" data-quiz-launch-close aria-label="Close exam session">&times;</button>
+          <iframe class="quiz-session-frame" name="quiz-session-{{ quiz.slug }}" title="{{ quiz.title }} session" hidden></iframe>
+        </section>
+      </div>
+    {% endfor %}
+    {% endif %}
+
+    {% if selected_quiz %}
+      {% if ready_to_start %}
+        <section class="panel start-panel quiz-start-panel">
+          <div>
+            <span class="quiz-start-kicker">{{ selected_quiz.difficulty.title() }} &middot; {{ progress.total }} questions</span>
+            <h2>Ready to begin?</h2>
+            <p>{{ selected_quiz.summary }}</p>
+            {% if selected_quiz.passing_score %}
+              <p class="requirement">You need {{ selected_quiz.passing_score }}% or higher to pass.</p>
+            {% endif %}
+          </div>
+          <form method="post" action="{{ url_for('start_quiz', slug=selected_quiz.slug) }}" data-quiz-start-form>
+            {% if requires_identity %}
+              <div class="identity-fields">
+                <label>
+                  <span>Name</span>
+                  <input
+                    name="trainee_name"
+                    autocomplete="name"
+                    placeholder="frank call"
+                    value="{{ identity_values.get('trainee_name', '') }}"
+                    {% if 'trainee_name' in readonly_fields %}readonly{% endif %}
+                    required
+                  >
+                </label>
+                <label>
+                  <span>Callsign</span>
+                  <input
+                    name="callsign"
+                    autocomplete="off"
+                    placeholder="W-102"
+                    value="{{ identity_values.get('callsign', '') }}"
+                    {% if 'callsign' in readonly_fields %}readonly{% endif %}
+                    required
+                  >
+                </label>
+              </div>
+            {% endif %}
+            <button type="submit">{% if selected_quiz.slug in ['corrections-officer', 'solo-patrol'] %}Request Exam Access{% else %}Start Practice{% endif %}</button>
+          </form>
+        </section>
+      {% elif results %}
+        <section class="panel result-panel">
+          <div>
+            {% if results.passing_score %}
+              <span class="result-status {% if results.passed %}passed{% else %}failed{% endif %}">
+                {% if results.passed %}Passed{% else %}Failed{% endif %}
+              </span>
+            {% endif %}
+            <h2>Results</h2>
+            <p>
+              {{ results.correct }} correct out of {{ results.total }} graded questions.
+              {% if results.passing_score %}
+                Required score: {{ results.passing_score }}%.
+              {% endif %}
+              {% if results.review_only_total %}
+                {{ results.review_only_total }} written answer{% if results.review_only_total != 1 %}s{% endif %} sent to supervisor review.
+              {% endif %}
+              Review the missed graded answers below, then run it again.
+            </p>
+            {% if results.submission_id %}
+              <p>Saved to supervisor panel as submission #{{ results.submission_id }}.</p>
+            {% endif %}
+          </div>
+          <a class="button" href="{{ url_for('quiz', slug=selected_quiz.slug) }}">{% if selected_quiz.passing_score %}Retake Exam{% else %}Retake Practice{% endif %}</a>
+        </section>
+
+        <section class="question-list">
+          {% for item in results.responses %}
+            <article class="question-card {% if item.review_only %}review-only{% elif item.is_correct %}correct{% else %}wrong{% endif %}">
+              <div class="question-head">
+                <span>{{ item.category }}</span>
+                <strong>{% if item.review_only %}Supervisor Review{% else %}#{{ item.number }}{% endif %}</strong>
+              </div>
+              <h2>{{ item.prompt }}</h2>
+              <p><b>Your answer:</b> {{ item.selected }}</p>
+              {% if item.review_only %}
+                <p><b>Correct answer:</b> Supervisor will review this written response.</p>
+              {% elif not item.is_correct %}
+                <p><b>Correct answer:</b> {{ item.answer }}</p>
+              {% endif %}
+            </article>
+          {% endfor %}
+        </section>
+      {% else %}
+        <form method="post" action="{{ url_for('answer_question', slug=selected_quiz.slug) }}" class="focus-form">
+          <article class="question-card focus-card">
+            <div class="question-head">
+              <span>{{ current_question.category }}</span>
+              <strong>#{{ progress.current }} / {{ progress.total }}</strong>
+            </div>
+            <div class="progress-track">
+              <span style="width: {{ (progress.current / progress.total * 100)|round }}%"></span>
+            </div>
+            <h2>{{ current_question.prompt }}</h2>
+            <p class="question-description">{{ current_question.description }}</p>
+            {% if current_question.written %}
+              <label class="written-answer">
+                <span>Written answer</span>
+                <input name="answer" autocomplete="off" required autofocus placeholder="Type your answer">
+              </label>
+            {% else %}
+              <div class="choice-grid">
+                {% for choice in current_question.choices %}
+                  <label>
+                    <input type="radio" name="answer" value="{{ choice }}" required>
+                    <span>{{ choice }}</span>
+                  </label>
+                {% endfor %}
+              </div>
+            {% endif %}
+          </article>
+          <div class="sticky-submit">
+            <span>Question {{ progress.current }} of {{ progress.total }}</span>
+            <button type="submit">{% if progress.current == progress.total %}Finish Quiz{% else %}Next Question{% endif %}</button>
+          </div>
+        </form>
+      {% endif %}
+    {% endif %}
+  </main>
+  <script>
+    (() => {
+      const modals = [...document.querySelectorAll('[data-quiz-launch-modal]')];
+      const closeModal = (modal) => {
+        modal.classList.remove('is-open');
+        modal.classList.remove('session-active');
+        document.body.classList.remove('training-modal-open');
+        const frame = modal.querySelector('.quiz-session-frame');
+        if (frame) { frame.hidden = true; frame.src = 'about:blank'; }
+        window.setTimeout(() => { modal.hidden = true; }, 160);
+      };
+      document.querySelectorAll('[data-quiz-launch]').forEach((button) => button.addEventListener('click', () => {
+        const modal = modals.find((item) => item.dataset.quizLaunchModal === button.dataset.quizLaunch);
+        if (!modal) return;
+        modal.hidden = false;
+        requestAnimationFrame(() => modal.classList.add('is-open'));
+        document.body.classList.add('training-modal-open');
+        modal.querySelector('input:not([readonly])')?.focus();
+      }));
+      modals.forEach((modal) => modal.querySelectorAll('[data-quiz-launch-close]').forEach((button) => button.addEventListener('click', () => closeModal(modal))));
+      modals.forEach((modal) => {
+        const form = modal.querySelector('.quiz-launch-form');
+        const frame = modal.querySelector('.quiz-session-frame');
+        form?.addEventListener('submit', () => { modal.classList.add('session-active'); frame.hidden = false; });
+        frame?.addEventListener('load', () => {
+          if (frame.src === 'about:blank') return;
+          try { frame.contentDocument?.body.classList.add('quiz-session-popup'); } catch (_) {}
+        });
+      });
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+          const modal = document.querySelector('[data-quiz-launch-modal].is-open');
+          if (modal) closeModal(modal);
+        }
+      });
+    })();
+    document.querySelectorAll('[data-quiz-start-form], .focus-form').forEach((form) => form.addEventListener('submit', () => {
+      const button = form.querySelector('button[type="submit"]');
+      if (!button || button.disabled) return;
+      button.disabled = true;
+      button.dataset.originalText = button.textContent;
+      button.textContent = 'Loading...';
+    }));
+  </script>
+</body>
+</html>

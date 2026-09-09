@@ -1,0 +1,325 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ cadet.badge_number|bracket_callsign }} {{ cadet.name }}</title>
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='bolingbroke-logo.png') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+  <main class="shell">
+    <nav class="top-actions">
+      {% include "_back_button.html" %}
+      <a class="button secondary" href="{{ url_for('quiz_home') }}">Quiz Site</a>
+      <a class="button secondary" href="{{ url_for('hub') }}">Hub</a>
+    </nav>
+
+    <header class="hero">
+      <div class="brand-block">
+        <img class="site-logo" src="{{ url_for('static', filename='bolingbroke-logo.png') }}" alt="Bolingbroke State Penitentiary logo">
+        <div>
+          <p class="eyebrow">Cadet History</p>
+          <h1>{{ cadet.badge_number|bracket_callsign }} {{ cadet.name }}</h1>
+          <p class="lede">{{ cadet.phase }} - {{ cadet.status }} - {{ cadet.region or 'No region' }}</p>
+        </div>
+      </div>
+      <div class="score-card">
+        <span>Logs</span>
+        <strong>{{ logs|length }}</strong>
+        <small>training records</small>
+      </div>
+    </header>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <section class="flash-stack">
+          {% for category, message in messages %}
+            <div class="flash {{ category }}">{{ message }}</div>
+          {% endfor %}
+        </section>
+      {% endif %}
+    {% endwith %}
+
+    <section class="panel tab-shell logger-tabs">
+      <input type="radio" name="cadet-page-tab" id="add-report-tab" checked>
+      <input type="radio" name="cadet-page-tab" id="history-tab">
+      <div class="tab-buttons">
+        <label for="add-report-tab">Add Report</label>
+        <label for="history-tab">History</label>
+      </div>
+
+      <section class="tab-panel add-report-panel logger-section">
+        <div>
+          <h2>Add Training Report</h2>
+          <p>Use local time. Include badge numbers for trainer records.</p>
+        </div>
+        <form method="post" action="{{ url_for('add_cadet_log', cadet_id=cadet.id) }}" class="custom-question-form">
+          <label>
+            <span>Training Officer</span>
+            <input
+              name="training_officer"
+              value="{{ identity_values.get('training_officer', '') }}"
+              placeholder="Frank Call"
+              {% if 'training_officer' in readonly_fields %}readonly{% endif %}
+              required
+            >
+          </label>
+          <label>
+            <span>Officer Badge</span>
+            <input
+              name="officer_badge"
+              value="{{ identity_values.get('officer_badge', '') }}"
+              placeholder="LT-121"
+              {% if 'officer_badge' in readonly_fields %}readonly{% endif %}
+              required
+            >
+          </label>
+          <label>
+            <span>Training Started</span>
+            <input class="local-datetime-input" name="training_started" type="datetime-local" required>
+          </label>
+          <label>
+            <span>Training Ended</span>
+            <input class="local-datetime-input" name="training_ended" type="datetime-local" required>
+          </label>
+          <label>
+            <span>Timezone</span>
+            <select class="timezone-select" name="training_timezone" data-timezone-select>
+              <option value="America/New_York">Eastern Time</option>
+              <option value="America/Chicago">Central Time</option>
+              <option value="America/Denver">Mountain Time</option>
+              <option value="America/Los_Angeles">Pacific Time</option>
+              <option value="America/Anchorage">Alaska Time</option>
+              <option value="Pacific/Honolulu">Hawaii Time</option>
+              <option value="UTC">UTC</option>
+            </select>
+          </label>
+          <input type="hidden" name="training_started_utc" data-utc-for="training_started">
+          <input type="hidden" name="training_ended_utc" data-utc-for="training_ended">
+          <label class="wide-field">
+            <span>Activities Completed Successfully</span>
+            <textarea name="activities" rows="4" placeholder="What did they complete?" required></textarea>
+          </label>
+          <label class="wide-field">
+            <span>Notes</span>
+            <textarea name="notes" rows="7" placeholder="Detailed notes on how the cadet was and what future trainers should know." required></textarea>
+          </label>
+          <label>
+            <span>Cadet Logger</span>
+            <select name="logger_status">
+              <option>Updated</option>
+              <option>Not Updated</option>
+            </select>
+          </label>
+          <button type="submit">Add Training Log</button>
+        </form>
+      </section>
+
+      <section class="tab-panel history-panel logger-section">
+        <div>
+          <h2>History</h2>
+          <p>Edit a log if a trainer made a mistake.</p>
+        </div>
+        <div class="question-list">
+          {% for log in logs %}
+            <details class="question-card editable-log-card">
+              <summary data-log-summary>
+                <div class="question-head">
+                  <span>{{ log.created_at }}</span>
+                  <strong>{{ log.logger_status }}</strong>
+                </div>
+                <h2>{{ cadet.badge_number|bracket_callsign }} {{ cadet.name }}</h2>
+                <p><b>[{{ log.officer_badge }}] {{ log.training_officer }}</b></p>
+                <p>
+                  <b>Training Started:</b> <span data-local-datetime="{{ log.training_started }}">{{ log.training_started }}</span><br>
+                  <b>Training Ended:</b> <span data-local-datetime="{{ log.training_ended }}">{{ log.training_ended }}</span>
+                  {% if log.training_timezone %}<br><b>Logged Timezone:</b> {{ log.training_timezone }}{% endif %}
+                </p>
+                <button class="button secondary small-button" type="button" data-log-toggle>Edit Log</button>
+              </summary>
+              <form method="post" action="{{ url_for('update_cadet_log', cadet_id=cadet.id, log_id=log.id) }}" class="custom-question-form log-edit-form">
+                <label>
+                  <span>Training Officer</span>
+                  <input name="training_officer" value="{{ log.training_officer }}" required>
+                </label>
+                <label>
+                  <span>Officer Badge</span>
+                  <input name="officer_badge" value="{{ log.officer_badge }}" required>
+                </label>
+                <label>
+                  <span>Training Started</span>
+                  <input class="local-datetime-input" name="training_started" type="datetime-local" data-local-datetime-value="{{ log.training_started }}" required>
+                </label>
+                <label>
+                  <span>Training Ended</span>
+                  <input class="local-datetime-input" name="training_ended" type="datetime-local" data-local-datetime-value="{{ log.training_ended }}" required>
+                </label>
+                <label>
+                  <span>Timezone</span>
+                  <select class="timezone-select" name="training_timezone" data-timezone-select data-stored-timezone="{{ log.training_timezone or '' }}">
+                    <option value="America/New_York">Eastern Time</option>
+                    <option value="America/Chicago">Central Time</option>
+                    <option value="America/Denver">Mountain Time</option>
+                    <option value="America/Los_Angeles">Pacific Time</option>
+                    <option value="America/Anchorage">Alaska Time</option>
+                    <option value="Pacific/Honolulu">Hawaii Time</option>
+                    <option value="UTC">UTC</option>
+                  </select>
+                </label>
+                <input type="hidden" name="training_started_utc" data-utc-for="training_started">
+                <input type="hidden" name="training_ended_utc" data-utc-for="training_ended">
+                <label class="wide-field">
+                  <span>Activities Completed Successfully</span>
+                  <textarea name="activities" rows="4" required>{{ log.activities }}</textarea>
+                </label>
+                <label class="wide-field">
+                  <span>Notes</span>
+                  <textarea name="notes" rows="7" required>{{ log.notes }}</textarea>
+                </label>
+                <label>
+                  <span>Cadet Logger</span>
+                  <select name="logger_status">
+                    <option {% if log.logger_status == 'Updated' %}selected{% endif %}>Updated</option>
+                    <option {% if log.logger_status == 'Not Updated' %}selected{% endif %}>Not Updated</option>
+                  </select>
+                </label>
+                <button type="submit">Save Log</button>
+              </form>
+            </details>
+          {% else %}
+            <article class="question-card">
+              <h2>No training logs yet.</h2>
+              <p>Add the first FTO report from the Add Report tab.</p>
+            </article>
+          {% endfor %}
+        </div>
+      </section>
+    </section>
+  </main>
+  <script>
+    const formatLocalDateTimeValue = (date) => {
+      const pad = (value) => String(value).padStart(2, "0");
+      return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+    };
+
+    const parseStoredDate = (value) => {
+      if (!value) {
+        return null;
+      }
+      const normalized = value.includes("T") ? value : value.replace(" ", "T");
+      const hasTimezone = /(?:Z|[+-]\d{2}:?\d{2})$/i.test(normalized);
+      const date = new Date(hasTimezone ? normalized : normalized);
+      return Number.isNaN(date.getTime()) ? null : date;
+    };
+
+    const browserTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+
+    const ensureTimezoneOption = (select, timezone, label = timezone) => {
+      if (!timezone) {
+        return;
+      }
+      const hasOption = Array.from(select.options).some((option) => option.value === timezone);
+      if (!hasOption) {
+        select.add(new Option(label, timezone));
+      }
+    };
+
+    const getTimeZoneOffset = (date, timeZone) => {
+      const parts = new Intl.DateTimeFormat("en-US", {
+        timeZone,
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: false,
+      }).formatToParts(date);
+      const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+      const asUtc = Date.UTC(
+        Number(values.year),
+        Number(values.month) - 1,
+        Number(values.day),
+        Number(values.hour === "24" ? "0" : values.hour),
+        Number(values.minute),
+        Number(values.second)
+      );
+      return asUtc - date.getTime();
+    };
+
+    const zonedInputToUtc = (value, timeZone) => {
+      if (!value) {
+        return "";
+      }
+      const [datePart, timePart] = value.split("T");
+      const [year, month, day] = datePart.split("-").map(Number);
+      const [hour, minute] = timePart.split(":").map(Number);
+      const utcGuess = new Date(Date.UTC(year, month - 1, day, hour, minute, 0));
+      const offset = getTimeZoneOffset(utcGuess, timeZone);
+      const firstPass = new Date(utcGuess.getTime() - offset);
+      const correctedOffset = getTimeZoneOffset(firstPass, timeZone);
+      return new Date(utcGuess.getTime() - correctedOffset).toISOString();
+    };
+
+    document.querySelectorAll(".local-datetime-input").forEach((input) => {
+      const storedValue = input.dataset.localDatetimeValue;
+      const storedDate = parseStoredDate(storedValue);
+      if (storedDate) {
+        input.value = formatLocalDateTimeValue(storedDate);
+      } else if (!input.value) {
+        input.value = formatLocalDateTimeValue(new Date());
+      }
+    });
+
+    document.querySelectorAll("[data-timezone-select]").forEach((select) => {
+      ensureTimezoneOption(select, browserTimezone, `${browserTimezone} (Browser)`);
+      if (select.dataset.storedTimezone) {
+        ensureTimezoneOption(select, select.dataset.storedTimezone);
+      }
+      select.value = browserTimezone;
+    });
+
+    document.querySelectorAll("form").forEach((form) => {
+      form.addEventListener("submit", () => {
+        const timezone = form.elements.training_timezone?.value || browserTimezone;
+        form.querySelectorAll("[data-utc-for]").forEach((hidden) => {
+          const source = form.elements[hidden.dataset.utcFor];
+          if (!source?.value) {
+            hidden.value = "";
+            return;
+          }
+          hidden.value = zonedInputToUtc(source.value, timezone);
+        });
+      });
+    });
+
+    document.querySelectorAll("[data-local-datetime]").forEach((element) => {
+      const date = parseStoredDate(element.dataset.localDatetime);
+      if (date) {
+        element.textContent = date.toLocaleString([], {
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+          hour: "numeric",
+          minute: "2-digit",
+        });
+      }
+    });
+
+    document.querySelectorAll("[data-log-summary]").forEach((summary) => {
+      const details = summary.closest("details");
+      const toggle = summary.querySelector("[data-log-toggle]");
+      summary.addEventListener("click", (event) => {
+        if (!event.target.closest("[data-log-toggle]")) {
+          event.preventDefault();
+        }
+      });
+      toggle?.addEventListener("click", (event) => {
+        event.preventDefault();
+        details.open = !details.open;
+      });
+    });
+  </script>
+</body>
+</html>

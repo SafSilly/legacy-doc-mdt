@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ selected_quiz.title }}</title>
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='bolingbroke-logo.png') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body class="quiz-page quiz-focus-page{% if selected_quiz.passing_score %} exam-session-page{% else %} practice-session-page{% endif %}">
+  <main class="shell focus-shell">
+    <nav class="top-actions">
+      {% include "_back_button.html" %}
+      <a class="button secondary" href="{{ url_for('quiz', slug=selected_quiz.slug) }}">Exit {% if selected_quiz.passing_score %}Exam{% else %}Practice{% endif %}</a>
+    </nav>
+
+    <header class="exam-session-header">
+      <div class="exam-session-brand">
+        <img src="{{ url_for('static', filename='bolingbroke-logo.png') }}" alt="DOC logo">
+        <div><p class="eyebrow">{% if selected_quiz.passing_score %}Certification Exam{% else %}Training Practice{% endif %}</p><h1>{{ selected_quiz.title }}</h1><p>{{ selected_quiz.summary }}</p></div>
+      </div>
+      <div class="exam-session-counter">
+        {% if results and results.show_feedback %}
+          <span>Score</span>
+          <strong>{{ results.score }}%</strong>
+          <small>{{ results.correct }} of {{ results.total }} correct</small>
+        {% elif results %}
+          <span>Status</span>
+          <strong>Submitted</strong>
+          <small>Your supervisor can review it.</small>
+        {% else %}
+          <span>Progress</span>
+          <strong>{{ progress.current }}<small>/{{ progress.total }}</small></strong>
+          <small>{{ ((progress.current - 1) / progress.total * 100)|round|int }}% completed</small>
+        {% endif %}
+      </div>
+    </header>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}<section class="flash-stack">{% for category, message in messages %}<div class="flash {{ category }}">{{ message }}</div>{% endfor %}</section>{% endif %}
+    {% endwith %}
+
+    {% if results and results.show_feedback %}
+      <section class="panel result-panel">
+        <div>
+          <h2>Practice Results</h2>
+          <p>
+            You scored {{ results.score }}%.
+            {{ results.correct }} correct out of {{ results.total }} graded questions.
+            {% if results.review_only_total %}
+              {{ results.review_only_total }} written answer{% if results.review_only_total != 1 %}s{% endif %} were practice review only.
+            {% endif %}
+          </p>
+        </div>
+        <a class="button" href="{{ url_for('quiz', slug=selected_quiz.slug) }}">Retake Practice</a>
+      </section>
+
+      <section class="question-list">
+        {% for item in results.responses %}
+          <article class="question-card {% if item.review_only %}review-only{% elif item.is_correct %}correct{% else %}wrong{% endif %}">
+            <div class="question-head">
+              <span>{{ item.category }}</span>
+              <strong>{% if item.review_only %}Practice Review{% elif item.is_correct %}Correct{% else %}Incorrect{% endif %}</strong>
+            </div>
+            <h2>{{ item.prompt }}</h2>
+            <p><b>Your answer:</b> {{ item.selected }}</p>
+            {% if item.review_only %}
+              <p><b>Expected answer:</b> {{ item.answer }}</p>
+            {% elif item.is_correct %}
+              <p><b>Correct answer:</b> {{ item.answer }}</p>
+            {% else %}
+              <p><b>Correct answer:</b> {{ item.answer }}</p>
+            {% endif %}
+          </article>
+        {% endfor %}
+      </section>
+    {% elif results %}
+      <section class="panel result-panel">
+        <div>
+          <span class="result-status passed">Submitted</span>
+          <h2>Test Submitted</h2>
+          <p>Your test has been submitted. A supervisor will review your attempt.</p>
+        </div>
+        <a class="button" href="{{ url_for('quiz_home') }}">Back to Exams</a>
+      </section>
+    {% else %}
+      <form method="post" action="{{ url_for('answer_question', slug=selected_quiz.slug) }}" class="focus-form exam-question-form">
+        <div class="exam-progress-rail"><span style="width: {{ ((progress.current - 1) / progress.total * 100)|round }}%"></span></div>
+        <article class="exam-question-card">
+          <header class="exam-question-meta">
+            <div><span>{{ current_question.category }}</span><b>{% if current_question.written %}Written response{% else %}Multiple choice{% endif %}</b></div>
+            <strong>Question {{ "%02d"|format(progress.current) }}</strong>
+          </header>
+          <div class="exam-question-copy"><span>Read carefully</span><h2>{{ current_question.prompt }}</h2>{% if current_question.description %}<p>{{ current_question.description }}</p>{% endif %}</div>
+          {% if current_question.written %}
+            <label class="written-answer exam-written-answer">
+              <span>Your response</span>
+              <textarea name="answer" rows="7" autocomplete="off" required autofocus placeholder="Write a clear and complete response..."></textarea>
+              <small>Answer in your own words. Your response will be saved when you continue.</small>
+            </label>
+          {% else %}
+            <fieldset class="choice-grid exam-choice-grid"><legend>Select one answer</legend>
+              {% for choice in current_question.choices %}
+                <label>
+                  <input type="radio" name="answer" value="{{ choice }}" required>
+                  <i>{{ ['A','B','C','D','E','F'][loop.index0] }}</i><span>{{ choice }}</span><b aria-hidden="true">&#10003;</b>
+                </label>
+              {% endfor %}
+            </fieldset>
+          {% endif %}
+        </article>
+        <div class="sticky-submit exam-submit-bar">
+          <div><span>{{ progress.current }} of {{ progress.total }}</span><small>Your answer is saved when you continue.</small></div>
+          <button type="submit">{% if progress.current == progress.total %}Submit {% if selected_quiz.passing_score %}Exam{% else %}Practice{% endif %}{% else %}Save &amp; Continue <span>&rarr;</span>{% endif %}</button>
+        </div>
+      </form>
+    {% endif %}
+  </main>
+  <script>
+    document.querySelector('.focus-form')?.addEventListener('submit', (event) => {
+      const form = event.currentTarget;
+      const button = form.querySelector('button[type="submit"]');
+      if (!button || button.disabled) return;
+      button.disabled = true;
+      button.textContent = 'Saving answer...';
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>DOC Complaint Form</title>
+  {% include "_social_meta.html" %}
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='bolingbroke-logo.png') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+  <main class="shell">
+    {% include "_public_directory.html" %}
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <section class="flash-stack">
+          {% for category, message in messages %}
+            <div class="flash {{ category }}">{{ message }}</div>
+          {% endfor %}
+        </section>
+      {% endif %}
+    {% endwith %}
+
+    <header class="hero">
+      <div class="brand-block">
+        <img class="site-logo" src="{{ url_for('static', filename='bolingbroke-logo.png') }}" alt="Bolingbroke State Penitentiary logo">
+        <div>
+          <p class="eyebrow">San Andreas Department of Corrections</p>
+          <h1>DOC Complaint Form</h1>
+          <p class="lede">Submit a detailed complaint for DOC command review.</p>
+        </div>
+      </div>
+    </header>
+
+    <section class="panel complaint-panel">
+      <form method="post" action="{{ url_for('submit_complaint') }}" class="custom-question-form complaint-form">
+        <label>
+          <span>Discord Username</span>
+          <input name="discord_username" required>
+        </label>
+        <label>
+          <span>Name</span>
+          <input name="name" required>
+        </label>
+        <label class="wide-field">
+          <span>Contact Info</span>
+          <input name="contact_info" required>
+        </label>
+        <label class="wide-field">
+          <span>What is the name, callsign, or description of the corrections officer you are reporting?</span>
+          <input name="officer_reported" required>
+        </label>
+        <label class="wide-field">
+          <span>What is the topic and date/time of your complaint?</span>
+          <input name="topic_datetime" required>
+        </label>
+        <label class="wide-field">
+          <span>Please describe in great detail the events that unfolded from start to finish.</span>
+          <textarea name="event_details" rows="7" required></textarea>
+        </label>
+        <label class="wide-field">
+          <span>Do you have any evidence? If so, provide here.</span>
+          <textarea name="evidence" rows="4"></textarea>
+        </label>
+        <label class="wide-field">
+          <span>Do you have any witnesses to these events? If so, provide here with contact info.</span>
+          <textarea name="witnesses" rows="4"></textarea>
+        </label>
+        <label class="wide-field">
+          <span>Is there anything else you would like to add?</span>
+          <textarea name="additional_info" rows="4"></textarea>
+        </label>
+        <button type="submit">Submit Complaint</button>
+      </form>
+    </section>
+
+    {% include "_site_footer.html" %}
+  </main>
+</body>
+</html>

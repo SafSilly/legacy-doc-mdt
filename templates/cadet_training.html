@@ -1,0 +1,304 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cadet Training</title>
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='bolingbroke-logo.png') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body class="{% if request.args.get('embed') %}embedded-panel-body{% endif %}">
+  <main class="shell cadet-training-shell">
+    <nav class="top-actions">
+      {% include "_back_button.html" %}
+      <a class="button secondary" href="{{ url_for('cadet_panel') }}">Cadet Overview</a>
+      <a class="button secondary" href="{{ url_for('hub') }}">Hub</a>
+    </nav>
+
+    <header class="cadet-training-hero">
+      <div>
+        <p class="eyebrow">Cadet Knowledge Center</p>
+        <h1>Training</h1>
+        <p>Choose a subject and work through a mix of knowledge checks and written scenarios based on the current DOC SOP.</p>
+      </div>
+      <div class="cadet-training-total"><strong>{{ training_categories|length * 10 + practice_quizzes|sum(attribute='count') }}</strong><span>practice questions</span></div>
+    </header>
+
+    <section class="training-library-section">
+      <div class="training-library-heading">
+        <div><p class="eyebrow">Complete Practice Banks</p><h2>SOP &amp; Radio Training</h2></div>
+        <p>Work through the complete SOP or focus only on radio codes. These practice sessions do not require supervisor approval.</p>
+      </div>
+      <div class="training-practice-grid">
+        {% for quiz in practice_quizzes %}
+          <button type="button" class="training-practice-card" data-practice-launch="{{ quiz.slug }}">
+            <div><span>{{ "%02d"|format(loop.index) }}</span><small>{{ quiz.count }} questions</small></div>
+            <h3>{{ quiz.title }}</h3>
+            <p>{{ quiz.summary }}</p>
+            <b>Start Practice <i>&rarr;</i></b>
+          </button>
+        {% endfor %}
+      </div>
+    </section>
+
+    {% for quiz in practice_quizzes %}
+      <div class="training-quiz-modal quiz-launch-modal" data-practice-launch-modal="{{ quiz.slug }}" hidden>
+        <button class="training-modal-backdrop" type="button" data-practice-launch-close aria-label="Close practice setup"></button>
+        <section class="training-question-set quiz-launch-card" role="dialog" aria-modal="true" aria-labelledby="practice-launch-title-{{ quiz.slug }}">
+          <header>
+            <div><p class="eyebrow">Complete Practice Bank</p><h2 id="practice-launch-title-{{ quiz.slug }}">{{ quiz.title }}</h2><p>{{ quiz.summary }}</p></div>
+            <button type="button" class="training-modal-close" data-practice-launch-close aria-label="Close practice setup">&times;</button>
+          </header>
+          <div class="quiz-launch-body">
+            <div class="quiz-launch-overview"><span>{{ quiz.count }} questions</span><strong>Practice session</strong><p>No supervisor approval is required. Your result will be saved under Training Results.</p></div>
+            <form method="post" action="{{ url_for('start_quiz', slug=quiz.slug) }}" class="quiz-launch-form" target="practice-session-{{ quiz.slug }}">
+              <input type="hidden" name="trainee_name" value="{{ identity_values.get('trainee_name', '') }}">
+              <input type="hidden" name="callsign" value="{{ identity_values.get('callsign', '') }}">
+              <button type="submit">Start {{ quiz.title }}</button>
+            </form>
+          </div>
+          <button type="button" class="quiz-session-close" data-practice-launch-close aria-label="Close practice session">&times;</button>
+          <iframe class="quiz-session-frame" name="practice-session-{{ quiz.slug }}" title="{{ quiz.title }} session" hidden></iframe>
+        </section>
+      </div>
+    {% endfor %}
+
+    <div class="training-library-heading training-subject-heading"><div><p class="eyebrow">Focused Subjects</p><h2>Topic Training</h2></div><p>Build one skill at a time with ten-question sessions combining knowledge checks and written scenarios.</p></div>
+    <section class="training-category-grid" aria-label="Training categories">
+      {% for category in training_categories %}
+        <button type="button" class="training-category-card{% if loop.first %} is-active{% endif %}" data-training-category-button="{{ category.slug }}">
+          <header><span>{{ "%02d"|format(loop.index) }}</span><b>Subject {{ "%02d"|format(loop.index) }}</b></header>
+          <div><strong>{{ category.title }}</strong><small>{{ category.summary }}</small></div>
+          <footer><span>{{ category.questions|selectattr('type', 'equalto', 'multiple_choice')|list|length }} knowledge checks</span><span>{{ category.questions|selectattr('type', 'equalto', 'written')|list|length }} written</span><b>Start &rarr;</b></footer>
+        </button>
+      {% endfor %}
+    </section>
+
+    {% for category in training_categories %}
+      <div class="training-quiz-modal" data-training-category="{{ category.slug }}" hidden>
+        <button class="training-modal-backdrop" type="button" data-training-close aria-label="Close training"></button>
+        <section class="training-question-set" role="dialog" aria-modal="true" aria-labelledby="training-title-{{ category.slug }}">
+          <header>
+            <div><p class="eyebrow">Cadet Training · Subject {{ "%02d"|format(loop.index) }}</p><h2 id="training-title-{{ category.slug }}">{{ category.title }}</h2><p>{{ category.summary }}</p></div>
+            <div class="training-modal-head-actions">
+              <div class="training-score" data-training-score><strong>0 correct</strong><span>live score</span></div>
+              <button type="button" class="training-modal-close" data-training-close aria-label="Close training">×</button>
+            </div>
+          </header>
+          <div class="training-progress-row">
+            <span data-training-position>Question 1 of {{ category.questions|length }}</span>
+            <div><i data-training-progress></i></div>
+            <b data-training-status>0 answered · 0 skipped</b>
+          </div>
+          <div class="training-question-stage">
+            {% for question in category.questions %}
+              <article class="training-question" data-question-index="{{ loop.index0 }}" data-question-type="{{ question.type }}"{% if question.answer %} data-answer="{{ question.answer }}"{% endif %} {% if not loop.first %}hidden{% endif %}>
+                <div class="training-question-number"><span>{{ "%02d"|format(loop.index) }}</span><b>{{ 'Multiple choice' if question.type == 'multiple_choice' else 'Written response' }}</b></div>
+                <h3>{{ question.prompt }}</h3>
+                {% if question.type == 'multiple_choice' %}
+                  <div class="training-options">
+                    {% for option in question.options %}<button type="button" data-training-option="{{ option }}">{{ option }}</button>{% endfor %}
+                  </div>
+                  <p class="training-feedback" data-training-feedback aria-live="polite"></p>
+                {% else %}
+                  <textarea rows="5" placeholder="Write your response here..." aria-label="Response to question {{ loop.index }}"></textarea>
+                  <button class="training-guidance-toggle" type="button" data-guidance-toggle>Show answer guidance</button>
+                {% endif %}
+                <div class="training-guidance" data-training-guidance hidden>{{ question.guidance }}</div>
+              </article>
+            {% endfor %}
+            <section class="training-complete" data-training-complete hidden>
+              <span>Category complete</span><h3>{{ category.title }}</h3>
+              <p data-training-summary>You reached the end of this practice set.</p>
+              <small data-training-save-status>Saving result...</small>
+              <button type="button" class="button" data-training-restart>Practice Again</button>
+            </section>
+          </div>
+          <footer class="training-question-controls">
+            <div><button type="button" class="button secondary" data-training-skip>Skip Question</button><button type="button" class="button" data-training-next>Next Question</button></div>
+          </footer>
+        </section>
+      </div>
+    {% endfor %}
+  </main>
+  <script>
+    (() => {
+      const practiceButtons = [...document.querySelectorAll('[data-practice-launch]')];
+      const practiceModals = [...document.querySelectorAll('[data-practice-launch-modal]')];
+      function closePractice(modal) {
+        modal.classList.remove('is-open');
+        modal.classList.remove('session-active');
+        document.body.classList.remove('training-modal-open');
+        const frame = modal.querySelector('.quiz-session-frame');
+        if (frame) { frame.hidden = true; frame.src = 'about:blank'; }
+        window.setTimeout(() => { modal.hidden = true; }, 160);
+      }
+      practiceButtons.forEach((button) => button.addEventListener('click', () => {
+        const modal = practiceModals.find((item) => item.dataset.practiceLaunchModal === button.dataset.practiceLaunch);
+        if (!modal) return;
+        modal.hidden = false;
+        requestAnimationFrame(() => modal.classList.add('is-open'));
+        document.body.classList.add('training-modal-open');
+        modal.querySelector('button[type="submit"]')?.focus();
+      }));
+      practiceModals.forEach((modal) => modal.querySelectorAll('[data-practice-launch-close]').forEach((button) => button.addEventListener('click', () => closePractice(modal))));
+      practiceModals.forEach((modal) => {
+        const form = modal.querySelector('.quiz-launch-form');
+        const frame = modal.querySelector('.quiz-session-frame');
+        form?.addEventListener('submit', () => { modal.classList.add('session-active'); frame.hidden = false; });
+        frame?.addEventListener('load', () => {
+          if (frame.src === 'about:blank') return;
+          try { frame.contentDocument?.body.classList.add('quiz-session-popup'); } catch (_) {}
+        });
+      });
+      const buttons = [...document.querySelectorAll('[data-training-category-button]')];
+      const sets = [...document.querySelectorAll('[data-training-category]')];
+      const trainingSaveUrl = "{{ url_for('save_cadet_training_result') }}";
+      function openCategory(slug) {
+        buttons.forEach((button) => button.classList.toggle('is-active', button.dataset.trainingCategoryButton === slug));
+        const set = sets.find((item) => item.dataset.trainingCategory === slug);
+        if (!set) return;
+        set.hidden = false;
+        requestAnimationFrame(() => set.classList.add('is-open'));
+        document.body.classList.add('training-modal-open');
+        set.querySelector('.training-modal-close')?.focus();
+      }
+      buttons.forEach((button) => button.addEventListener('click', () => openCategory(button.dataset.trainingCategoryButton)));
+      sets.forEach((set) => {
+        const questions = [...set.querySelectorAll('[data-question-index]')];
+        const multipleChoice = questions.filter((question) => question.dataset.questionType === 'multiple_choice');
+        const score = set.querySelector('[data-training-score] strong');
+        const position = set.querySelector('[data-training-position]');
+        const progress = set.querySelector('[data-training-progress]');
+        const status = set.querySelector('[data-training-status]');
+        const nextButton = set.querySelector('[data-training-next]');
+        const skipButton = set.querySelector('[data-training-skip]');
+        const complete = set.querySelector('[data-training-complete]');
+        let current = 0;
+        let skipped = new Set();
+        function updateHeader() {
+          const answered = questions.filter((q) => q.dataset.answered === 'true').length;
+          const correct = multipleChoice.filter((q) => q.dataset.correct === 'true').length;
+          score.textContent = `${correct} correct`;
+          position.textContent = `Question ${Math.min(current + 1, questions.length)} of ${questions.length}`;
+          progress.style.width = `${Math.min(100, ((current + 1) / questions.length) * 100)}%`;
+          status.textContent = `${answered} answered · ${skipped.size} skipped`;
+        }
+        function showQuestion(index) {
+          current = index;
+          complete.hidden = true;
+          questions.forEach((question, questionIndex) => question.hidden = questionIndex !== current);
+          nextButton.hidden = false;
+          skipButton.hidden = false;
+          nextButton.textContent = current === questions.length - 1 ? 'Finish Category' : 'Next Question';
+          updateHeader();
+        }
+        async function saveResult() {
+          const saveStatus = complete.querySelector('[data-training-save-status]');
+          const responses = questions.map((question) => {
+            const selected = question.querySelector('[data-training-option].is-selected');
+            const writtenResponse = question.querySelector('textarea')?.value.trim() || '';
+            return {
+              type: question.dataset.questionType,
+              prompt: question.querySelector('h3').textContent.trim(),
+              response: selected?.dataset.trainingOption || writtenResponse,
+              correct: question.dataset.correct === 'true',
+              skipped: skipped.has(Number(question.dataset.questionIndex)),
+            };
+          });
+          try {
+            const response = await fetch(trainingSaveUrl, {
+              method: 'POST',
+              headers: {'Content-Type': 'application/json', 'X-Requested-With': 'fetch'},
+              body: JSON.stringify({
+                category_slug: set.dataset.trainingCategory,
+                correct_count: multipleChoice.filter((q) => q.dataset.correct === 'true').length,
+                answered_count: questions.filter((q) => q.dataset.answered === 'true').length,
+                skipped_count: skipped.size,
+                responses,
+              }),
+            });
+            if (!response.ok) throw new Error('Unable to save training result.');
+            saveStatus.textContent = 'Result saved for supervisor review.';
+            saveStatus.className = 'is-saved';
+          } catch (error) {
+            saveStatus.textContent = 'Result could not be saved. Please try the category again.';
+            saveStatus.className = 'is-error';
+          }
+        }
+        function finishCategory() {
+          questions.forEach((question) => question.hidden = true);
+          complete.hidden = false;
+          nextButton.hidden = true;
+          skipButton.hidden = true;
+          const answered = questions.filter((q) => q.dataset.answered === 'true').length;
+          const correct = multipleChoice.filter((q) => q.dataset.correct === 'true').length;
+          complete.querySelector('[data-training-summary]').textContent = `${answered} answered, ${skipped.size} skipped, and ${correct} multiple-choice answers correct.`;
+          progress.style.width = '100%';
+          position.textContent = 'Practice complete';
+          const saveStatus = complete.querySelector('[data-training-save-status]');
+          saveStatus.textContent = 'Saving result...';
+          saveStatus.className = '';
+          saveResult();
+        }
+        multipleChoice.forEach((question) => question.querySelectorAll('[data-training-option]').forEach((option) => option.addEventListener('click', () => {
+          const correct = option.dataset.trainingOption === question.dataset.answer;
+          question.dataset.correct = String(correct);
+          question.dataset.answered = 'true';
+          skipped.delete(Number(question.dataset.questionIndex));
+          question.querySelectorAll('[data-training-option]').forEach((item) => {
+            item.classList.toggle('is-selected', item === option);
+            item.classList.toggle('is-correct', item.dataset.trainingOption === question.dataset.answer && (item === option || !correct));
+            item.classList.toggle('is-wrong', item === option && !correct);
+          });
+          const feedback = question.querySelector('[data-training-feedback]');
+          feedback.textContent = `${correct ? 'Correct.' : 'Review this one.'} ${question.querySelector('[data-training-guidance]').textContent}`;
+          feedback.className = `training-feedback ${correct ? 'is-correct' : 'is-wrong'}`;
+          updateHeader();
+        })));
+        questions.filter((question) => question.dataset.questionType === 'written').forEach((question) => {
+          question.querySelector('textarea')?.addEventListener('input', (event) => {
+            question.dataset.answered = String(Boolean(event.target.value.trim()));
+            if (event.target.value.trim()) skipped.delete(Number(question.dataset.questionIndex));
+            updateHeader();
+          });
+        });
+        set.querySelectorAll('[data-guidance-toggle]').forEach((toggle) => toggle.addEventListener('click', () => {
+          const guidance = toggle.parentElement.querySelector('[data-training-guidance]');
+          guidance.hidden = !guidance.hidden;
+          toggle.textContent = guidance.hidden ? 'Show answer guidance' : 'Hide answer guidance';
+        }));
+        nextButton.addEventListener('click', () => current < questions.length - 1 ? showQuestion(current + 1) : finishCategory());
+        skipButton.addEventListener('click', () => {
+          skipped.add(current);
+          questions[current].dataset.answered = 'false';
+          showQuestion(current < questions.length - 1 ? current + 1 : 0);
+        });
+        set.querySelector('[data-training-restart]').addEventListener('click', () => {
+          skipped = new Set();
+          questions.forEach((question) => {
+            delete question.dataset.answered; delete question.dataset.correct;
+            question.querySelector('textarea') && (question.querySelector('textarea').value = '');
+            question.querySelectorAll('[data-training-option]').forEach((option) => option.classList.remove('is-selected', 'is-correct', 'is-wrong'));
+            const feedback = question.querySelector('[data-training-feedback]');
+            if (feedback) { feedback.textContent = ''; feedback.className = 'training-feedback'; }
+          });
+          showQuestion(0);
+        });
+        set.querySelectorAll('[data-training-close]').forEach((close) => close.addEventListener('click', () => {
+          set.classList.remove('is-open');
+          document.body.classList.remove('training-modal-open');
+          window.setTimeout(() => set.hidden = true, 160);
+        }));
+        showQuestion(0);
+      });
+      document.addEventListener('keydown', (event) => {
+        if (event.key !== 'Escape') return;
+        const openPractice = document.querySelector('[data-practice-launch-modal].is-open');
+        if (openPractice) closePractice(openPractice);
+        else document.querySelector('.training-quiz-modal.is-open [data-training-close]')?.click();
+      });
+    })();
+  </script>
+</body>
+</html>

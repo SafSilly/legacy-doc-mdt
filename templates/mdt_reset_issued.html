@@ -1,0 +1,10 @@
+{% extends 'mdt_auth_base.html' %}
+{% block title %}DOC · Reset code issued{% endblock %}
+{% block heading %}{{ 'Account created — setup code' if setup else 'Reset code ready' }}{% endblock %}
+{% block content %}
+<p class="terminal-description">For <strong>{{ target.display_name or target.username }}</strong> · CID {{ target.username }}</p>
+<p class="terminal-description">Verify this person's identity before sharing the code privately. This code expires in 15 minutes and can be used once. Any earlier code has been replaced.</p>
+<label class="terminal-description" for="issued-code">{{ 'Setup' if setup else 'Reset' }} code · shown only on this page</label><input id="issued-code" class="terminal-issued-code" value="{{ reset_code }}" readonly autocomplete="off">
+<p class="terminal-description">They should open <strong>Forgot password / reset code</strong> on the MDT login page and enter their CID, this code, and a new password.</p>
+<a class="terminal-help" href="{{ url_for('mdt_accounts') }}">Return to accounts</a>
+{% endblock %}

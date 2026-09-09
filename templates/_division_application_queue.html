@@ -1,0 +1,33 @@
+<section class="tab-panel division-applications-panel">
+  <div class="division-applications-head">
+    <div><span>{{ queue_short }} Command Review</span><h2>{{ queue_title }} Applications</h2><p>Review candidates, submit your division vote, and record the final decision.</p></div>
+    <div class="division-application-count"><strong>{{ queue_applications|length }}</strong><small>submissions</small></div>
+  </div>
+  <div class="complaint-list division-application-list">
+    {% for application in queue_applications %}
+      <details class="complaint-card division-application-card {{ application.decision_status }}">
+        <summary class="complaint-card-head"><div class="division-applicant-identity"><span>Submission #{{ application.id }} &middot; {{ application.created_at }}</span><h3>{{ application.full_name }}</h3><p><b>{{ queue_short }}</b><i></i>{{ application.callsign }}<i></i>{{ application.rank }}</p></div><div class="cadet-card-meta application-status-card {{ application.decision_status }}"><strong>{{ application.decision_status|title }}</strong><small>{{ application.total_votes }}/{{ application.required_votes }} votes</small></div><span class="division-application-chevron" aria-hidden="true">⌄</span></summary>
+        <div class="complaint-card-body">
+          <div class="division-review-layout">
+            <section class="division-review-applicant"><header><span>Applicant details</span><strong>Candidate profile</strong></header><div class="complaint-grid division-applicant-facts"><p><span>Discord</span><b>{{ application.discord_username }}</b></p><p><span>Callsign</span><b>{{ application.callsign }}</b></p><p><span>Current Rank</span><b>{{ application.rank }}</b></p><p><span>Application</span><b>{{ application_forms[application.application_type].short_title }}</b></p></div><section class="division-application-responses"><header><span>Candidate Responses</span><strong>Application Review</strong></header>{% for response in application.responses %}{% if response.answer %}<article><b>{{ response.label }}</b><p>{{ response.answer }}</p></article>{% endif %}{% endfor %}</section></section>
+            <section class="division-review-decision"><header><span>Review desk</span><strong>Decision & notes</strong></header><div class="application-vote-box"><div class="application-decision-line"><strong>Status: {{ application.decision_status|title }}</strong><span>{{ application.total_votes }} of {{ application.required_votes }} division votes submitted{% if application.decided_at %} &middot; Decided {{ application.decided_at }}{% endif %}</span></div><div class="vote-total-strip"><span>Yes: <b>{{ application.yes_votes }}</b></span><span>No: <b>{{ application.no_votes }}</b></span><span>Abstain: <b>{{ application.abstain_votes }}</b></span></div>{% if application.is_final %}<p class="application-vote-closed">Voting closed with this application {{ application.decision_status }}.</p>{% else %}<form method="post" action="{{ url_for('vote_application', application_id=application.id) }}" class="application-vote-form" data-application-decision><label class="application-review-note"><span>Reviewer note <small>(optional)</small></span><textarea name="reviewer_note" rows="3" maxlength="1000" placeholder="Record your reasoning or follow-up notes..."></textarea></label><div class="application-decision-actions"><button class="application-decision-button approve {% if application.user_vote == 'yes' %}vote-selected{% endif %}" name="vote" value="yes" type="submit">Approve</button><button class="application-decision-button deny {% if application.user_vote == 'no' %}vote-selected{% endif %}" name="vote" value="no" type="submit">Deny</button><button class="application-decision-button abstain {% if application.user_vote == 'abstain' %}vote-selected{% endif %}" name="vote" value="abstain" type="submit">Abstain</button>{% if application.user_vote %}<button class="application-decision-button clear" name="vote" value="clear" type="submit">Clear Vote</button>{% endif %}</div></form>{% endif %}{% if application.can_owner_override %}<form class="application-override-form" method="post" data-application-decision><span>{{ 'Final Decision' if embedded else 'Owner Decision' }}</span><input type="hidden" name="reviewer_note" value=""><button class="application-decision-button owner-approve" formaction="{{ url_for('override_application', application_id=application.id, decision='accept') }}" type="submit">Accept</button><button class="application-decision-button owner-deny" formaction="{{ url_for('override_application', application_id=application.id, decision='deny') }}" type="submit">Deny</button></form>{% endif %}</div>
+              <section class="division-review-history"><header><span>Decision history</span><strong>{{ application.review_history|length }} entries</strong></header>{% for event in application.review_history %}<article><div><b>{{ event.reviewer }}</b><span>{{ event.event_type|replace('-', ' ')|title }}{% if event.decision %} · {{ event.decision|title }}{% endif %}</span></div><time data-local-time="{{ event.created_at }}">{{ event.created_at }}</time>{% if event.note %}<p>{{ event.note }}</p>{% endif %}</article>{% else %}<p class="application-history-empty">No reviewer actions have been recorded yet.</p>{% endfor %}</section>
+            </section>
+          </div>
+        </div>
+      </details>
+    {% else %}
+      <article class="question-card"><h2>No {{ queue_short }} applications submitted yet.</h2><p>New {{ queue_short }} applications will appear here for division review.</p></article>
+    {% endfor %}
+  </div>
+</section>
+<script>
+  document.querySelectorAll("[data-application-decision]").forEach((form) => {
+    form.addEventListener("submit", (event) => {
+      const action = event.submitter?.value || event.submitter?.textContent?.trim().toLowerCase();
+      if (!action || ["abstain", "clear"].includes(action)) return;
+      const decision = ["yes", "accept", "approve"].includes(action) ? "approve" : "deny";
+      if (!window.confirm(`Confirm ${decision} decision? This will be recorded in the application history.`)) event.preventDefault();
+    });
+  });
+</script>

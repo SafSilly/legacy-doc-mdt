@@ -1,0 +1,32 @@
+.duty-hours { margin-top:20px; }
+.duty-hours .duty-heading { display:flex; align-items:center; justify-content:space-between; gap:16px; }
+.duty-heading nav { display:flex; gap:8px; }
+.duty-controls { padding:16px 20px; display:grid; gap:14px; }
+.duty-controls p { margin:0; font-size:13px; }
+.duty-controls form { display:flex; flex-direction:row; align-items:center; flex-wrap:wrap; gap:10px; }
+.duty-controls label { font-size:12px; }
+.duty-controls input[type="date"] { width:200px; min-width:0; flex:0 1 200px; }
+.duty-heading button:disabled { opacity:.45; cursor:default; }
+.duty-controls small,.duty-week > small,.duty-corrections p { color:var(--muted,#aaa); font-size:11px; line-height:1.6; }
+.duty-weeks { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:12px; padding:0 20px 20px; }
+.duty-week { min-width:0; border:1px solid var(--line,#36332b); background:rgba(255,255,255,.025); border-radius:12px; padding:16px; }
+.duty-week.current { border-color:var(--accent,#c9a24a); background:rgba(201,162,74,.06); }
+.duty-week h3 { margin:0 0 5px; font-size:14px; }
+.duty-week > time { display:block; font-size:12px; color:var(--muted,#aaa); }
+.duty-week dl { margin:16px 0 0; display:grid; gap:10px; }
+.duty-week dl > div { display:flex; justify-content:space-between; gap:8px; font-size:12px; }
+.duty-week dt { color:var(--muted,#aaa); }
+.duty-week dd { margin:0; font-variant-numeric:tabular-nums; white-space:nowrap; }
+.duty-week .duty-total { padding-top:12px; border-top:1px solid var(--line,#36332b); font-weight:750; font-size:14px; }
+.duty-total.met dd { color:var(--success,#89c49b); }
+.duty-total.below dd { color:var(--danger,#ef9696); }
+.duty-requirement-state { display:block; margin-top:8px; }
+.duty-corrections { margin:0 20px 20px; border-top:1px solid var(--line,#36332b); padding-top:16px; }
+.duty-corrections summary { cursor:pointer; font-size:13px; }
+.duty-session { margin-top:10px; border:1px solid var(--line,#36332b); border-radius:8px; padding:12px; }
+.duty-session form { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; margin-top:14px; }
+.duty-session label { display:grid; gap:6px; font-size:12px; }
+.duty-unlinked { padding:0 20px 20px; color:var(--muted,#aaa); }
+[data-duty-message] { color:var(--danger,#ef9696); font-size:13px; }
+@media(max-width:900px) { .duty-weeks { grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); } }
+@media(max-width:550px) { .duty-hours .duty-heading { flex-wrap:wrap; } .duty-weeks { grid-template-columns:1fr; } .duty-session form { grid-template-columns:1fr; } }

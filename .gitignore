@@ -1,0 +1,9 @@
+.venv/
+.preview-venv/
+__pycache__/
+*.pyc
+instance/
+.env
+.preview-server.*.log
+.preview-server.log
+CODEX_PROJECT_NOTES.md

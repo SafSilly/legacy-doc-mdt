@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Legacy DOC RP</title>
+  {% include "_social_meta.html" %}
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='bolingbroke-logo.png') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+  <main class="shell home-shell">
+    {% include "_public_directory.html" %}
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <section class="flash-stack">
+          {% for category, message in messages %}
+            <div class="flash {{ category }}">{{ message }}</div>
+          {% endfor %}
+        </section>
+      {% endif %}
+    {% endwith %}
+
+    <header class="home-hero">
+      <div class="home-hero-copy">
+        <p class="eyebrow">Legacy Roleplay · Department of Corrections</p>
+        <h1>San Andreas Department of Corrections</h1>
+        <p class="lede">Custody, supervision, rehabilitation, and professional correctional operations inside Bolingbroke State Penitentiary.</p>
+        <div class="home-hero-actions">
+          <a class="button" href="{{ url_for('hiring_page') }}">Explore Careers</a>
+          <a class="button secondary" href="{{ url_for('staff_page') }}">Meet Our Command</a>
+        </div>
+      </div>
+      <aside class="home-hero-card" aria-label="Department principles">
+        <span>Our standard</span>
+        <strong>Professional service.<br>Secure operations.</strong>
+        <div><small>01</small><p>Integrity and accountability</p></div>
+        <div><small>02</small><p>Safety through preparation</p></div>
+        <div><small>03</small><p>Respect in every interaction</p></div>
+      </aside>
+    </header>
+
+    <section class="home-grid home-overview-grid">
+      <article class="panel home-about">
+        <span class="eyebrow">About Us</span>
+        <h2>Custody with purpose.</h2>
+        <p>The Department of Corrections is responsible for the custody, supervision, and rehabilitation of individuals who have been convicted of crimes. Its primary goal is not only to enforce lawful sentences but also to provide inmates with the tools and support needed to change their behavior.</p>
+        <p>Through structured programs such as education, job training, and counseling, the Department works to address the underlying causes of criminal activity. By focusing on personal development and accountability, it aims to prepare inmates for successful reintegration into society, reducing repeat offenses and promoting safer communities.</p>
+      </article>
+      <aside class="panel home-card home-explore-card">
+        <span class="eyebrow">Explore DOC</span>
+        <h2>Find what you need.</h2>
+        <div class="quick-link-stack">
+          <a href="{{ url_for('staff_page') }}"><span><b>Staff</b><small>Command and supervisors</small></span><i>→</i></a>
+          <a href="{{ url_for('divisions_page') }}"><span><b>Divisions</b><small>Specialized department teams</small></span><i>→</i></a>
+          <a href="{{ url_for('hiring_page') }}"><span><b>Hiring</b><small>Start your DOC career</small></span><i>→</i></a>
+          <a href="{{ url_for('complaints_page') }}"><span><b>Complaint Form</b><small>Submit a formal concern</small></span><i>→</i></a>
+        </div>
+      </aside>
+    </section>
+
+    <section class="panel photo-album">
+      <header class="home-section-heading">
+        <div><span class="eyebrow">Inside the department</span><h2>DOC in action</h2></div>
+        <p>Operations, training, and teamwork at Bolingbroke State Penitentiary.</p>
+      </header>
+      <div class="album-grid">
+        <figure>
+          <img src="{{ url_for('static', filename='album/doc-album-1.webp') }}" alt="DOC transport intake operation" loading="lazy" decoding="async">
+        </figure>
+        <figure>
+          <img src="{{ url_for('static', filename='album/doc-album-2.webp') }}" alt="DOC officers overlooking the prison yard" loading="lazy" decoding="async">
+        </figure>
+        <figure>
+          <img src="{{ url_for('static', filename='album/doc-album-3.webp') }}" alt="DOC emergency response team lineup" loading="lazy" decoding="async">
+        </figure>
+        <figure>
+          <img src="{{ url_for('static', filename='album/doc-album-4.webp') }}" alt="DOC transport vehicles behind facility fencing" loading="lazy" decoding="async">
+        </figure>
+        <figure>
+          <img src="{{ url_for('static', filename='album/doc-album-5.webp') }}" alt="DOC officer preparing equipment outside the facility" loading="lazy" decoding="async">
+        </figure>
+        <figure>
+          <img src="{{ url_for('static', filename='album/doc-album-6.webp') }}" alt="DOC group photo at Bolingbroke State Penitentiary" loading="lazy" decoding="async">
+        </figure>
+      </div>
+    </section>
+
+    {% include "_site_footer.html" %}
+  </main>
+</body>
+</html>

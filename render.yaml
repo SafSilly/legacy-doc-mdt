@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: doc-sop-quiz
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn --bind 0.0.0.0:$PORT app:app
+    disk:
+      name: quiz-data
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.13
+      - key: DATABASE_URL
+        value: /var/data/doc_quiz.db
+      - key: DOC_APPLICATION_URL
+        value: /applications
+      - key: COMPLAINTS_URL
+        value: /complaints
+      - key: OWNER_USERNAME
+        value: "209517"
+      - key: SECRET_KEY
+        generateValue: true
+      - key: SUPERVISOR_PASSWORD
+        sync: false

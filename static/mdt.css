@@ -1,0 +1,220 @@
+body.mdt { background:#090909; height:100vh; height:100dvh; overflow:hidden; }
+.mdt, .mdt-login, .mdt-embedded { color-scheme:dark; scrollbar-color:#514b3d #111110; }
+.mdt .dashboard-shell { width:100%; height:100%; max-width:none; margin:0; padding:0; gap:0; grid-template-columns:230px minmax(0,1fr); grid-template-rows:minmax(0,1fr); }
+.mdt .dashboard-sidebar { position:relative; top:0; height:100%; min-height:0; max-height:100%; overflow:hidden; grid-template-rows:auto minmax(0,1fr) auto; gap:12px; border-radius:0; border-width:0 1px 0 0; background:#111110; box-shadow:none; padding:16px 12px; }
+.mdt .dashboard-brand { padding:0 4px 14px; border-bottom:1px solid #333026; }
+.mdt .dashboard-brand strong { letter-spacing:.08em; font-size:18px; white-space:nowrap; }
+.mdt .dashboard-brand span { max-width:150px; }
+.mdt .dashboard-main { padding:32px; min-width:0; min-height:0; height:100%; grid-auto-rows:max-content; overflow-y:auto; overflow-x:hidden; overscroll-behavior:contain; scrollbar-gutter:stable; }
+.mdt .dashboard-nav { min-height:0; overflow-y:auto; overflow-x:hidden; overscroll-behavior:contain; align-content:start; gap:3px; }
+.mdt .dashboard-nav > details { display:block; }
+.mdt .dashboard-nav a, .mdt .dashboard-nav summary { min-height:38px; padding:0 10px; font-weight:650; }
+.mdt .dashboard-nav details > div { margin-left:10px; padding:3px 0 5px 8px; gap:2px; }
+.mdt .dashboard-nav details > div a { min-height:32px; }
+.mdt .dashboard-sidebar-footer { grid-template-columns:1fr; gap:6px; padding-top:10px; }
+.mdt .dashboard-sidebar-footer a { min-height:32px; padding:0 8px; font-size:12px; font-weight:600; }
+.mdt .dashboard-sidebar-footer form { grid-column:1 / -1; }
+.mdt .dashboard-sidebar-footer button { min-height:36px; padding:8px; font-size:12px; }
+.mdt .dashboard-main:has(> .dashboard-embedded-panel:not([hidden])) { display:flex; flex-direction:column; overflow:hidden; }
+.mdt .dashboard-main > .mdt-topbar { flex-shrink:0; }
+.mdt .dashboard-embedded-panel { flex:1; min-height:0; grid-template-rows:auto minmax(0,1fr); }
+.mdt .dashboard-embedded-panel.uses-inner-header { grid-template-rows:minmax(0,1fr); }
+.mdt .dashboard-embedded-panel iframe, .mdt .dashboard-embedded-panel iframe.compact-panel { height:100%; min-height:0; }
+.mdt .dashboard-header { border:0; border-bottom:1px solid #343027; border-radius:0; padding:16px 0 27px; background:none; box-shadow:none; }
+.mdt .dashboard-header h1 { font-size:clamp(28px,3vw,42px); letter-spacing:-.045em; }
+.mdt .dashboard-header .lede { max-width:620px; font-size:13px; }
+.mdt .dashboard-panel { background:#141413; border:1px solid #302d25; border-radius:8px; box-shadow:none; }
+.mdt .dashboard-nav > a.active { border-left:3px solid #c9a24a; background:#282317; }
+.mdt .dashboard-nav summary { font-size:12px; letter-spacing:.03em; }
+.mdt .dashboard-nav a { font-size:12px; }
+.mdt-topbar { display:flex; align-items:center; justify-content:space-between; gap:15px; color:#a8a8a8; font:11px ui-monospace,monospace; letter-spacing:.08em; border-bottom:1px solid #302d25; padding-bottom:20px; }
+.mdt-topbar strong { color:#c9a24a; font-weight:500; }
+.mdt-topbar a { color:#c9a24a; }
+.mdt-metrics { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:14px; margin:22px 0; }
+.mdt-metrics > div { display:flex; flex-direction:column; gap:9px; border:1px solid #302d25; background:linear-gradient(120deg,#1d1b15,#141413); padding:20px; border-radius:6px; }
+.mdt-metrics span { color:#b4b0a5; font-size:11px; text-transform:uppercase; letter-spacing:.07em; }
+.mdt-metrics strong { font-size:28px; color:#e4c77f; font-weight:600; }
+.mdt-metrics small,.mdt-muted { font-size:12px; color:#a8a8a8; line-height:1.6; }
+.mdt-personnel { margin:0 0 22px; padding:22px; }
+.mdt-personnel .dashboard-panel-head { align-items:center; }
+.mdt-search { width:min(300px,45%); }
+.mdt-search input { font-size:12px; }
+.mdt-table-wrap { overflow-x:auto; }
+.mdt-table { width:100%; border-collapse:collapse; text-align:left; }
+.mdt-table th { color:#a8a8a8; font-size:10px; text-transform:uppercase; letter-spacing:.08em; padding:12px; background:#1c1b17; }
+.mdt-table td { padding:14px 12px; border-bottom:1px solid #292720; font-size:12px; }
+.mdt-table td small { display:block; margin-top:5px; color:#999; font:10px ui-monospace,monospace; }
+.mdt-table code { color:#e2c786; white-space:nowrap; }
+.mdt-tag { display:inline-block; border:1px solid #4d4430; border-radius:4px; padding:4px 7px; color:#c9b77e; font-size:10px; white-space:nowrap; }
+.mdt-dialog { width:min(550px,calc(100% - 32px)); max-height:85vh; overflow:auto; border:1px solid #786439; border-radius:10px; padding:30px; background:#171717; color:#f2f2f2; box-shadow:0 24px 100px #000; }
+.mdt-dialog::backdrop { background:#000b; backdrop-filter:blur(5px); }
+.mdt-dialog form { display:grid; gap:16px; }
+.mdt-dialog h2,.mdt-dialog p { margin:0; }
+.mdt-dialog label { display:grid; gap:8px; }
+.mdt-dialog-actions { display:flex; justify-content:flex-end; gap:10px; }
+.mdt button.secondary { background:#242424; color:#e4c77f; border:1px solid #514b3d; }
+.mdt-reset-action { margin-top:8px; }
+.mdt-number-grid { display:grid; grid-template-columns:repeat(6,1fr); gap:8px; border:0; margin:0; padding:4px; max-height:290px; overflow:auto; }
+.mdt-number-grid label { position:relative; cursor:pointer; }
+.mdt-number-grid input { position:absolute; opacity:0; width:100%; height:100%; margin:0; }
+.mdt-number-grid span { text-align:center; padding:10px 5px; border:1px solid #444; border-radius:4px; font:14px ui-monospace,monospace; }
+.mdt-number-grid input:checked + span { background:#c9a24a; color:#090909; border-color:#c9a24a; }
+.mdt-number-grid input:focus-visible + span { outline:2px solid white; outline-offset:2px; }
+.mdt-login { min-height:100vh; display:grid; grid-template-columns:1.2fr 1fr; background:#090909; }
+.mdt-login-scene { display:flex; flex-direction:column; justify-content:space-between; padding:50px; background:linear-gradient(180deg,#09090944,#090909e8),url('/static/noah59.webp') center/cover; border-right:1px solid #443b29; }
+.mdt-login-brand { display:flex; align-items:center; gap:16px; font-size:13px; letter-spacing:.1em; }
+.mdt-login-brand img { width:64px; }
+.mdt-login-scene h1 { font-size:clamp(36px,4.7vw,72px); max-width:650px; line-height:1.05; letter-spacing:-.05em; margin:15px 0; }
+.mdt-login-scene p { color:#c1bbac; max-width:400px; line-height:1.7; }
+.mdt-login-form { display:flex; flex-direction:column; justify-content:center; padding:clamp(25px,5vw,85px); }
+.mdt-login-form .auth-form { margin:24px 0; }
+.mdt-login-form h2 { font-size:32px; margin:10px 0; }
+.mdt-login-form .auth-logo { width:76px; height:76px; margin-bottom:25px; }
+.mdt-login-form footer { display:flex; justify-content:space-between; gap:15px; font-size:12px; }
+.mdt-login-form a { color:#c9a24a; }
+.mdt-embedded { background:#090909; }
+.mdt-accounts { padding:22px; max-width:1200px; margin:0 auto; }
+.mdt-accounts-head { display:flex; justify-content:space-between; align-items:center; gap:18px; margin-bottom:24px; }
+.mdt-accounts-head h1 { margin:6px 0; font-size:30px; }
+.mdt-account-search { display:grid; gap:8px; margin-bottom:20px; color:#aaa; font-size:12px; }
+.mdt-account-list { display:grid; gap:10px; }
+.mdt-account-card { background:#161614; border:1px solid #333026; border-radius:9px; }
+.mdt-account-card > summary { display:flex; align-items:center; gap:12px; padding:16px; cursor:pointer; list-style:none; }
+.mdt-account-card > summary::-webkit-details-marker { display:none; }
+.mdt-account-card[open] > summary { border-bottom:1px solid #333026; background:#211e16; }
+.mdt-account-avatar { display:grid; place-items:center; width:38px; height:38px; flex-shrink:0; background:#30291a; color:#d9ba6a; border-radius:8px; }
+.mdt-account-name { flex:1; min-width:0; }
+.mdt-account-name strong { font-size:14px; display:block; overflow-wrap:anywhere; }
+.mdt-account-name small { display:block; margin-top:5px; color:#aaa; font-size:11px; }
+.mdt-account-details { padding:20px; }
+.mdt-account-fields { display:grid; grid-template-columns:1fr 1fr; gap:18px; }
+.mdt-account-fields label { display:grid; align-content:start; gap:7px; color:#b5b1a4; font-size:12px; }
+.mdt-account-fields small { font-size:11px; color:#8f8b7e; }
+.mdt-account-fields input[readonly] { color:#aaa; background:#1a1a18; }
+.mdt-account-save { grid-column:1 / -1; display:flex; justify-content:space-between; align-items:center; gap:15px; }
+.mdt-account-recovery { margin-top:20px; padding-top:18px; border-top:1px solid #333026; display:flex; align-items:center; justify-content:space-between; gap:15px; }
+.mdt-create-account { width:min(580px,calc(100% - 24px)); }
+/* Compact terminal shell and overview cards. */
+.mdt .dashboard-shell { grid-template-columns:260px minmax(0,1fr); }
+.mdt .dashboard-sidebar { padding:0; gap:0; background:#10100f; }
+.mdt .dashboard-brand { height:76px; padding:16px 20px; gap:12px; border-bottom:1px solid #2b2923; }
+.mdt .dashboard-brand img { width:42px; height:42px; padding:7px; border:1px solid #302e28; border-radius:16px; background:#1b1b18; }
+.mdt .dashboard-brand strong { font-size:14px; letter-spacing:.015em; }
+.mdt .dashboard-nav { padding:16px 10px; gap:8px; }
+.mdt .dashboard-nav > a,.mdt .dashboard-nav summary { min-height:50px; padding:10px 14px; font-size:13px; font-weight:500; letter-spacing:0; border-radius:14px; }
+.mdt .dashboard-nav > a.active { border:1px solid #66532e; background:#282318; }
+.mdt .dashboard-nav > a::before,.mdt .dashboard-nav summary::before { content:''; width:28px; height:28px; flex-shrink:0; border:1px solid #403a2c; border-radius:8px; background:#24221c url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23c8bc9b' stroke-width='1.5'%3E%3Crect x='4' y='4' width='6' height='6' rx='1'/%3E%3Crect x='14' y='4' width='6' height='6' rx='1'/%3E%3Crect x='4' y='14' width='6' height='6' rx='1'/%3E%3Crect x='14' y='14' width='6' height='6' rx='1'/%3E%3C/svg%3E") center/17px no-repeat; }
+.mdt .dashboard-nav > a,.mdt .dashboard-nav summary { display:flex; align-items:center; gap:12px; }
+.mdt .dashboard-nav summary::after { margin-left:auto; }
+.mdt .dashboard-sidebar-footer { padding:16px; border-top:1px solid #2b2923; }
+.mdt .dashboard-main { padding:0 24px 24px; gap:20px; }
+.mdt .mdt-topbar { position:sticky; top:0; z-index:5; height:76px; margin:0 -24px; padding:10px 24px; background:#10100ff5; border-bottom:1px solid #2b2923; font:12px inherit; letter-spacing:0; }
+.mdt-terminal-label { color:#9d998e; font-size:12px; }
+.mdt-account-menu { position:relative; min-width:0; max-width:75%; }
+.mdt .mdt-user-chip { display:flex; align-items:center; gap:14px; width:100%; min-width:0; padding:9px 13px; border:1px solid #302e28; border-radius:19px; background:#191916; color:#eeeae0; text-align:left; text-transform:none; letter-spacing:0; box-shadow:none; cursor:pointer; }
+.mdt-user-chip > span { display:grid; gap:4px; min-width:0; }
+.mdt-user-chip strong { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:#eeeae0; font-size:12px; }
+.mdt-user-chip time { color:#969287; font-size:11px; }
+.mdt .mdt-user-chip:hover,.mdt .mdt-user-chip[aria-expanded="true"] { background:#222019; border-color:#635334; }
+.mdt-account-menu svg { width:17px; height:17px; fill:none; stroke:currentColor; stroke-width:1.6; stroke-linecap:round; stroke-linejoin:round; flex-shrink:0; }
+.mdt-account-chevron { color:#a89c7c; transition:transform .15s ease; }
+.mdt-user-chip[aria-expanded="true"] .mdt-account-chevron { transform:rotate(180deg); }
+.mdt-account-dropdown { position:absolute; top:calc(100% + 8px); right:0; width:200px; padding:6px; border:1px solid #363229; border-radius:17px; background:#131311; box-shadow:0 14px 36px #0008; z-index:20; }
+.mdt-account-dropdown form { margin:0; display:block; }
+.mdt .mdt-account-dropdown a,.mdt .mdt-account-dropdown button { display:flex; align-items:center; gap:11px; width:100%; min-height:39px; padding:10px 12px; border:0; border-radius:11px; background:transparent; color:#dedbd3; font-family:inherit; font-size:13px; font-weight:500; letter-spacing:0; text-transform:none; text-decoration:none; text-align:left; box-shadow:none; cursor:pointer; }
+.mdt-account-dropdown a svg { color:#d4b66d; }
+.mdt .mdt-account-dropdown button { color:#e8b0aa; }
+.mdt .mdt-account-dropdown a:hover,.mdt .mdt-account-dropdown button:hover { background:#ffffff09; }
+.mdt-account-menu :focus-visible { outline:2px solid #c9a24a; outline-offset:2px; }
+.mdt .dashboard-brand { border-bottom-color:#2b2923; }
+.mdt .dashboard-sidebar { grid-template-rows:auto minmax(0,1fr); }
+.mdt .dashboard-header { padding:0; border:0; gap:12px; }
+.mdt .dashboard-header::before,.mdt .dashboard-header::after { display:none; }
+.mdt .dashboard-header h1 { font-size:20px; letter-spacing:-.02em; margin:0; }
+.mdt .dashboard-access-summary small { display:none; }
+.mdt .dashboard-header-actions { gap:12px; }
+.mdt .dashboard-notification-button { width:36px; height:36px; }
+.mdt-metrics { margin:0; gap:12px; }
+.mdt-metrics > div { flex-direction:row; align-items:center; gap:12px; padding:15px; border-radius:24px; background:#1d1b16; }
+.mdt-metrics > div:nth-child(2) { background:#1b1b1a; }
+.mdt-metrics > div:nth-child(3) { background:#272217; border-color:#514124; }
+.mdt-metrics > div > div { min-width:0; display:grid; gap:3px; }
+.mdt-metrics span { font-size:12px; text-transform:none; letter-spacing:0; }
+.mdt-metrics strong { font-size:20px; color:#f4eee0; overflow-wrap:anywhere; }
+.mdt-metric-icon { width:38px; height:38px; display:grid; place-items:center; flex-shrink:0; border:1px solid #494132; border-radius:50%; background:#ffffff05; color:#d0af62; }
+.mdt-metric-icon svg { width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:1.6; stroke-linecap:round; stroke-linejoin:round; }
+.mdt .dashboard-grid { grid-template-columns:repeat(3,minmax(0,1fr)); gap:20px; align-items:stretch; }
+.mdt .dashboard-grid > .dashboard-panel { height:510px; min-height:0; margin:0; padding:0; border-radius:24px; background:#191917; display:flex; flex-direction:column; }
+.mdt .dashboard-panel-head { padding:20px; height:84px; min-height:84px; align-items:center; background:transparent; flex-shrink:0; }
+.mdt .dashboard-panel-head h2 { font-size:16px; }
+.mdt .dashboard-panel-head p { font-size:12px; line-height:1.5; }
+.mdt-count { color:#b9a36f; margin-left:5px; font-size:13px; }
+.mdt .mdt-search { width:auto; margin:12px 16px; }
+.mdt .mdt-search input { border-radius:12px; min-height:38px; }
+.mdt .mdt-table-wrap { overflow:auto; flex:1; padding:0 16px; }
+.mdt .mdt-table thead { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); }
+.mdt .mdt-table,.mdt .mdt-table tbody { display:block; }
+.mdt .mdt-table tr { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:7px 10px; padding:14px; margin-bottom:10px; background:#22221e; border:1px solid #36332b; border-radius:16px; }
+.mdt .mdt-table td { padding:0; border:0; overflow-wrap:anywhere; }
+.mdt .mdt-table td:first-child strong { font-size:13px; }
+.mdt .mdt-table td:nth-child(3) { color:#aaa598; font-size:11px; align-self:center; }
+.mdt .mdt-table td:last-child:nth-child(5) { grid-column:1/-1; display:flex; flex-wrap:wrap; gap:6px; padding-top:5px; }
+.mdt .mdt-reset-action { margin:0; }
+.mdt .mdt-personnel > .mdt-muted,.mdt #personnel-empty { margin:12px 18px; font-size:11px; }
+.mdt .dashboard-announcement-summary { padding:10px 16px; }
+.mdt .dashboard-announcement-summary > div:first-child { display:none; }
+.mdt .dashboard-announcement-list { overflow:auto; min-height:0; align-content:start; }
+.mdt .dashboard-announcement { border-radius:14px; }
+.mdt .dashboard-announcement-content header { flex-wrap:wrap; gap:8px; }
+.mdt .dashboard-announcement-content header time { font-size:10px; }
+.mdt .dashboard-calendar-card { margin:16px; padding:14px; border-radius:18px; background:#22221d; overflow:auto; }
+.mdt .dashboard-calendar-title strong { font-size:16px; }
+.mdt .dashboard-calendar-title > div > span { display:none; }
+.mdt .mdt-topbar { font-family:inherit; }
+.mdt .dashboard-nav > a { justify-content:flex-start; }
+.mdt .dashboard-nav > a::after { margin-left:auto; }
+.mdt .calendar-month-summary small { display:none; }
+.mdt .dashboard-calendar-weekdays span { font-size:11px; text-transform:none; }
+.mdt .dashboard-calendar-cell,.mdt .dashboard-calendar-cell > a { min-height:42px; }
+@media(max-width:1250px) { .mdt .dashboard-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } .mdt .dashboard-grid > #calendar { grid-column:1/-1; height:auto; } }
+@media(max-width:900px) { .mdt .dashboard-shell { grid-template-columns:220px minmax(0,1fr); } .mdt .dashboard-grid { grid-template-columns:minmax(0,1fr); } .mdt .dashboard-main { padding:0 16px 20px; } .mdt .mdt-topbar { margin:0 -16px; padding:10px 16px; } }
+@media(max-width:600px) { .mdt-accounts { padding:12px; } .mdt-account-fields { grid-template-columns:1fr; } .mdt-account-save,.mdt-account-recovery { align-items:stretch; flex-direction:column; } .mdt-account-card > summary { flex-wrap:wrap; } .mdt-accounts-head { flex-wrap:wrap; } }
+[hidden] { display:none !important; }
+@media(min-width:1500px) { .mdt .dashboard-main { padding:0 24px 24px; } }
+@media(max-width:900px) { .mdt-metrics { grid-template-columns:repeat(2,minmax(0,1fr)); } .mdt-login { grid-template-columns:1fr; } .mdt-login-scene { display:none; } .mdt-login-form { max-width:520px; width:100%; margin:auto; } }
+@media(max-width:760px) { .mdt .dashboard-shell { display:block; padding-top:55px; } .mdt .dashboard-main { padding:18px; } .mdt .dashboard-sidebar { position:fixed; top:0; bottom:0; left:0; width:250px; height:100vh; height:100dvh; max-height:100dvh; } }
+@media(max-width:500px) { .mdt-topbar { flex-wrap:wrap; font-size:10px; } .mdt-metrics > div { padding:14px; } .mdt-metrics strong { font-size:23px; } .mdt-personnel { padding:14px; } .mdt-personnel .dashboard-panel-head { display:block; } .mdt-search { display:block; width:100%; margin-top:14px; } .mdt-number-grid { grid-template-columns:repeat(4,1fr); } }
+/* Quiet, compact terminal header. */
+.mdt .dashboard-brand { height:62px; min-height:62px; padding:12px 20px; gap:10px; background:#10100f; border-bottom-color:#ffffff0b; }
+.mdt .dashboard-brand img { width:34px; height:34px; padding:4px; border-radius:11px; border-color:#ffffff0d; background:#191917; }
+.mdt .dashboard-brand strong { font-size:13px; font-weight:600; letter-spacing:.025em; }
+.mdt .mdt-topbar { height:62px; min-height:62px; padding-top:8px; padding-bottom:8px; justify-content:flex-end; flex-wrap:nowrap; border-bottom-color:#ffffff0b; }
+.mdt .mdt-account-menu { max-width:100%; }
+.mdt .mdt-user-chip { gap:16px; padding:7px 11px; border-radius:12px; background:#191917; border-color:#ffffff0b; min-height:44px; }
+.mdt .mdt-user-chip > span { gap:3px; }
+.mdt .mdt-user-chip strong { font-size:12px; font-weight:600; }
+.mdt .mdt-user-chip time { font-size:10px; font-weight:400; color:#96948c; }
+.mdt .mdt-account-chevron { width:14px; height:14px; color:#96948c; }
+.mdt .mdt-account-dropdown { border-radius:12px; border-color:#ffffff10; }
+
+.mdt .dashboard-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+.mdt .dashboard-grid > #calendar { grid-column:auto; }
+.mdt-cadet-shortcuts { display:flex; align-items:center; gap:8px; }
+.mdt-cadet-shortcuts .doc-icon-button { width:36px; height:36px; min-height:36px; }
+.embedded-panel-body .cadet-overview-actions { display:none; }
+@media(max-width:900px) { .mdt .dashboard-grid { grid-template-columns:1fr; } }
+.mdt .mdt-topbar .dashboard-notification-button { width:36px; height:36px; min-height:36px; flex-shrink:0; }
+.mdt .dashboard-notification-center { position:fixed; top:68px; right:24px; z-index:40; max-height:calc(100dvh - 88px); overflow-y:auto; }
+
+.mdt .dashboard-nav > a::before,.mdt .dashboard-nav summary::before { content:none; }
+.mdt .mdt-nav-icon { width:28px; height:28px; padding:5px; box-sizing:border-box; flex-shrink:0; fill:none; stroke:#c8bc9b; stroke-width:1.6; stroke-linecap:round; stroke-linejoin:round; background:transparent; }
+
+/* Plain MDT panel headings. */
+.mdt .dashboard-embedded-head { background:none; border:0; box-shadow:none; padding:0 0 12px; min-height:0; }
+.mdt .dashboard-embedded-head .eyebrow { display:none; }
+.mdt .dashboard-embedded-head h1,.mdt .dashboard-header h1 { font-size:22px; font-weight:600; letter-spacing:0; margin:0; }
+.embedded-panel-body .hero { background:none; border:0; border-radius:0; box-shadow:none; min-height:0; padding:0 0 16px; margin-bottom:12px; }
+.embedded-panel-body .hero .site-logo,.embedded-panel-body .hero .eyebrow,.embedded-panel-body .hero .lede,.embedded-panel-body .hero .score-card { display:none; }
+.embedded-panel-body .hero h1,.embedded-panel-body .mdt-accounts-head h1 { font-size:22px; font-weight:600; letter-spacing:0; margin:0; }
+.embedded-panel-body .hero .brand-block { gap:0; }
+.embedded-panel-body .mdt-accounts-head .eyebrow { display:none; }

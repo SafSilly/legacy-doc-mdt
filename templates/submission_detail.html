@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Exam Attempt #{{ submission.id }}</title>
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='bolingbroke-logo.png') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body class="submission-review-page{% if request.args.get('embed') %} embedded-panel-body{% endif %}">
+  <main class="shell submission-review-shell">
+    {% if not request.args.get('embed') %}
+      <nav class="top-actions submission-review-nav">
+        <a class="button secondary" href="{{ url_for('supervisor_panel', _anchor='attempts-tab') }}">&larr; Exam Attempts</a>
+        <a class="button secondary" href="{{ url_for('hub') }}">Hub</a>
+      </nav>
+    {% endif %}
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}<section class="flash-stack">{% for category, message in messages %}<div class="flash {{ category }}">{{ message }}</div>{% endfor %}</section>{% endif %}
+    {% endwith %}
+
+    <header class="submission-review-hero {{ 'passed' if submission.passed else 'failed' }}">
+      <div class="submission-review-identity">
+        <span class="submission-review-index">#{{ submission.id }}</span>
+        <div>
+          <p class="eyebrow">{{ submission.quiz_title }}</p>
+          <h1>{% if submission.callsign %}{{ submission.callsign|bracket_callsign }} {% endif %}{{ submission.trainee_name }}</h1>
+          <p>Submitted <time data-local-time="{{ submission.created_at }}">{{ submission.created_at }}</time></p>
+        </div>
+      </div>
+      <div class="submission-review-score" style="--attempt-score: {{ submission.score }}">
+        <div><strong>{{ submission.score }}%</strong><span>{{ 'Passed' if submission.passed else 'Failed' }}</span></div>
+      </div>
+    </header>
+
+    <section class="submission-review-metrics" aria-label="Attempt summary">
+      <article><span>Correct Answers</span><strong>{{ submission.correct_count }} <small>/ {{ submission.total_count }}</small></strong></article>
+      <article><span>Missed Questions</span><strong>{{ missed|length }}</strong></article>
+      <article><span>Written Review</span><strong>{{ pending_review|length }} <small>pending</small></strong></article>
+      <article><span>Required Score</span><strong>{{ submission.passing_score or 0 }}%</strong></article>
+    </section>
+
+    <section class="submission-review-heading">
+      <div><p class="eyebrow">Response Review</p><h2>Question Breakdown</h2><p>Review graded responses and approve or deny written answers from this attempt.</p></div>
+      <div class="submission-review-legend"><span class="correct">Correct</span><span class="wrong">Incorrect</span><span class="pending">Pending review</span></div>
+    </section>
+
+    <section class="submission-response-list">
+      {% for item in responses %}
+        {% set response_state = 'correct' if (item.review_only and item.review_status == 'correct') or (not item.review_only and item.is_correct) else ('wrong' if (item.review_only and item.review_status == 'incorrect') or (not item.review_only and not item.is_correct) else 'pending') %}
+        <article class="submission-response-card {{ response_state }}">
+          <header>
+            <div><span>Question {{ item.number }}</span><b>{{ item.category }}</b></div>
+            <strong>{% if item.review_only %}{{ item.review_status|default('pending')|title }}{% elif item.is_correct %}Correct{% else %}Incorrect{% endif %}</strong>
+          </header>
+          <h3>{{ item.prompt }}</h3>
+          <div class="submission-answer-grid">
+            <section><span>Submitted Answer</span><p>{{ item.selected }}</p></section>
+            <section><span>Expected Answer</span><p>{{ item.answer }}</p></section>
+          </div>
+          {% if item.review_only %}
+            <form method="post" action="{{ url_for('review_written_response', submission_id=submission.id, response_number=item.number) }}" class="submission-review-actions">
+              {% if request.args.get('embed') %}<input type="hidden" name="embed" value="1">{% endif %}
+              <span>Supervisor decision</span>
+              <div><button type="submit" name="status" value="correct">Correct</button><button type="submit" name="status" value="incorrect">Incorrect</button><button type="submit" name="status" value="pending">Pending Review</button></div>
+            </form>
+          {% endif %}
+        </article>
+      {% else %}
+        <article class="submission-response-empty"><strong>No saved responses</strong><p>This older attempt does not contain question-level response data.</p></article>
+      {% endfor %}
+    </section>
+  </main>
+  <script>
+    document.querySelectorAll("[data-local-time]").forEach((node) => {
+      const value = node.dataset.localTime;
+      const parsed = value ? new Date(value.includes("T") ? value : value.replace(" ", "T") + "Z") : null;
+      if (parsed && !Number.isNaN(parsed.getTime())) node.textContent = new Intl.DateTimeFormat(undefined, {dateStyle: "medium", timeStyle: "short"}).format(parsed);
+    });
+  </script>
+</body>
+</html>

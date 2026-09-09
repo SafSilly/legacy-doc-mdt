@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>DOC Divisions</title>
+  {% include "_social_meta.html" %}
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='bolingbroke-logo.png') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+  <main class="shell divisions-shell">
+    {% include "_public_directory.html" %}
+
+    <header class="hero">
+      <div class="brand-block">
+        <img class="site-logo" src="{{ url_for('static', filename='bolingbroke-logo.png') }}" alt="Bolingbroke State Penitentiary logo">
+        <div>
+          <p class="eyebrow">Specialized Units</p>
+          <h1>Divisions</h1>
+          <p class="lede">Field Training Program and Emergency Response Team operations inside the Department of Corrections.</p>
+        </div>
+      </div>
+    </header>
+
+    <div class="division-card-grid">
+      {% for division in divisions %}
+        <article class="division-section" id="{{ division.slug }}">
+          <div class="division-content">
+            <div class="division-media" style="background-image: linear-gradient(180deg, rgba(0, 0, 0, .08), rgba(0, 0, 0, .68)), url('{{ url_for('static', filename=division.hero) }}');">
+              <img src="{{ url_for('static', filename=division.image|replace('.png', '.webp')) }}" alt="{{ division.short_title }} emblem" loading="lazy" decoding="async">
+              <span>{{ division.short_title }}</span>
+            </div>
+            <div class="division-copy">
+              <p class="eyebrow">{{ division.short_title }}</p>
+              <h2>{{ division.title }}</h2>
+              {% for paragraph in division.body %}
+                <p>{{ paragraph }}</p>
+              {% endfor %}
+            </div>
+          </div>
+        </article>
+      {% endfor %}
+    </div>
+
+    {% include "_site_footer.html" %}
+  </main>
+</body>
+</html>

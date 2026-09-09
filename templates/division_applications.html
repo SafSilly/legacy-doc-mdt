@@ -1,0 +1,435 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Division Command Panel</title>
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='bolingbroke-logo.png') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  <script defer src="{{ url_for('static', filename='live-actions.js') }}"></script>
+</head>
+<body class="{% if request.args.get('embed') %}embedded-panel-body{% endif %}">
+  <main class="shell">
+    <nav class="top-actions">
+      {% include "_back_button.html" %}
+      <a class="button secondary" href="{{ url_for('hub') }}">Hub</a>
+      <a class="button secondary" href="{{ url_for('applications_page') }}">Application Forms</a>
+      <form method="post" action="{{ url_for('supervisor_logout') }}">
+        <button class="button secondary" type="submit">Log Out</button>
+      </form>
+    </nav>
+
+    <header class="hero">
+      <div class="brand-block">
+        <img class="site-logo" src="{{ url_for('static', filename='bolingbroke-logo.png') }}" alt="Bolingbroke State Penitentiary logo">
+        <div>
+          <p class="eyebrow">Division Access</p>
+          <h1>Division Command Panel</h1>
+          <p class="lede">Review division applications, vote on decisions, and record DOC or joint-department trainings.</p>
+        </div>
+      </div>
+{% if not embedded %}      <div class="score-card">
+        <span>Division Rank</span>
+        <strong>{{ division_rank_labels[current_user.division_rank] if current_user.division_rank else current_user.role|title }}</strong>
+        <small>access</small>
+      </div>{% endif %}
+    </header>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <section class="flash-stack">
+          {% for category, message in messages %}
+            <div class="flash {{ category }}">{{ message }}</div>
+          {% endfor %}
+        </section>
+      {% endif %}
+    {% endwith %}
+
+    <section class="panel tab-shell division-command-tabs boxed-section">
+      <input type="radio" name="division-tab" id="division-applications-tab" checked>
+      <div class="tab-buttons">
+        <label for="division-applications-tab">Applications</label>
+      </div>
+
+      <section class="tab-panel division-applications-panel">
+        <div class="division-applications-head">
+          <div>
+            <span>Command Review</span>
+            <h2>Application Submissions</h2>
+            <p>Review candidates, submit command votes, and record the final division decision.</p>
+          </div>
+          <div class="division-application-count"><strong id="division-application-count">{{ applications|length }}</strong><small>submissions</small></div>
+        </div>
+        <div class="complaint-list division-application-list" id="division-application-list" data-live-url="{{ url_for('live_division_applications') }}">
+          {% for application in applications %}
+            <details class="complaint-card division-application-card {{ application.decision_status }}" data-live-card-id="{{ application.id }}">
+              <summary class="complaint-card-head">
+                <div class="division-applicant-identity">
+                  <span>Submission #{{ application.id }} &middot; {{ application.created_at }}</span>
+                  <h3>{{ application.full_name }}</h3>
+                  <p><b>{{ application.application_type|upper }}</b><i></i>{{ application.callsign }}<i></i>{{ application.rank }}</p>
+                </div>
+                <div class="cadet-card-meta application-status-card {{ application.decision_status }}">
+                  <strong>{{ application.decision_status|title }}</strong>
+                  <small>{{ application.total_votes }}/{{ application.required_votes }} votes</small>
+                </div>
+                <span class="division-application-chevron" aria-hidden="true">⌄</span>
+              </summary>
+              <div class="complaint-card-body">
+                <div class="complaint-grid division-applicant-facts">
+                  <p><span>Discord</span><b>{{ application.discord_username }}</b></p>
+                  <p><span>Callsign</span><b>{{ application.callsign }}</b></p>
+                  <p><span>Current Rank</span><b>{{ application.rank }}</b></p>
+                  <p><span>Application</span><b>{{ application_forms[application.application_type].short_title }}</b></p>
+                </div>
+                <div class="application-vote-box">
+                  <div class="application-decision-line">
+                    <strong>Status: {{ application.decision_status|title }}</strong>
+                    <span>{{ application.total_votes }} of {{ application.required_votes }} command votes submitted{% if application.decided_at %} &middot; Decided {{ application.decided_at }}{% endif %}</span>
+                  </div>
+                  <div class="vote-total-strip">
+                    <span>Yes: <b>{{ application.yes_votes }}</b></span>
+                    <span>No: <b>{{ application.no_votes }}</b></span>
+                    <span>Abstain: <b>{{ application.abstain_votes }}</b></span>
+                  </div>
+                  {% if application.is_final %}
+                    <p class="application-vote-closed">Voting closed with this application {{ application.decision_status }}.</p>
+                  {% else %}
+                    <form method="post" action="{{ url_for('vote_application', application_id=application.id) }}" class="application-vote-form" data-application-vote>
+                      <button class="button small-button {% if application.user_vote == 'yes' %}vote-selected{% endif %}" name="vote" value="yes" type="submit">Yes</button>
+                      <button class="button secondary small-button {% if application.user_vote == 'no' %}vote-selected{% endif %}" name="vote" value="no" type="submit">No</button>
+                      <button class="button secondary small-button {% if application.user_vote == 'abstain' %}vote-selected{% endif %}" name="vote" value="abstain" type="submit">Abstain</button>
+                      {% if application.user_vote %}
+                        <button class="button secondary small-button" name="vote" value="clear" type="submit">Clear Vote</button>
+                      {% endif %}
+                    </form>
+                  {% endif %}
+                  <form class="application-override-form" method="post" data-application-override>
+                    <span>Command Decision</span>
+                    <button class="small-button" formaction="{{ url_for('override_application', application_id=application.id, decision='accept') }}" type="submit">Accept</button>
+                    <button class="button danger small-button" formaction="{{ url_for('override_application', application_id=application.id, decision='deny') }}" type="submit">Deny</button>
+                  </form>
+                </div>
+                <section class="division-application-responses">
+                  <header><span>Candidate Responses</span><strong>Application Review</strong></header>
+                  {% for response in application.responses %}{% if response.answer %}
+                    <article><b>{{ response.label }}</b><p>{{ response.answer }}</p></article>
+                  {% endif %}{% endfor %}
+                </section>
+              </div>
+            </details>
+          {% else %}
+            <article class="question-card">
+              <h2>No applications submitted yet.</h2>
+              <p>FTP and ERT applications submitted from the application links will show here.</p>
+            </article>
+          {% endfor %}
+        </div>
+      </section>
+
+      {% if false %}{# Training logs and certifications moved to the ERT Panel. #}
+      <section class="tab-panel division-training-panel">
+        <div class="division-log-workspace-head">
+          <div><span>Training Administration</span><h2>Division Training Logs</h2><p>Record DOC sessions and joint-department training in one command workspace.</p></div>
+          <div class="division-log-count"><strong>{{ training_logs|length }}</strong><small>records</small></div>
+        </div>
+        <form method="post" action="{{ url_for('add_division_training_log') }}" class="custom-question-form division-training-form division-log-form">
+          <header class="division-log-form-head"><div><span>New Record</span><h3>Log a Training Session</h3></div><p>Fields marked required must be completed before saving.</p></header>
+          <label class="division-log-title-field">
+            <span>Training Title *</span>
+            <input name="training_title" placeholder="Joint transport training" required>
+          </label>
+          <label>
+            <span>Date / Time *</span>
+            <input name="training_datetime" type="datetime-local" required>
+          </label>
+          <fieldset class="wide-field department-toggle-group">
+            <legend>Departments Involved *</legend>
+            {% for department in training_departments %}
+              <label>
+                <input type="checkbox" name="departments" value="{{ department }}">
+                <span>{{ department }}</span>
+              </label>
+            {% endfor %}
+          </fieldset>
+          <label class="wide-field">
+            <span>Attendees</span>
+            <textarea name="attendees" rows="3" placeholder="Names, callsigns, or departments present"></textarea>
+          </label>
+          <label class="wide-field">
+            <span>Training Notes *</span>
+            <textarea name="notes" rows="6" placeholder="What was trained, who led it, and any follow-up needed." required></textarea>
+          </label>
+          <footer class="division-log-form-footer"><span>The record will be attributed to your signed-in account.</span><button class="small-button" type="submit">Save Training Log</button></footer>
+        </form>
+
+        <div class="division-log-history-head"><div><span>Command Archive</span><h3>Recorded Training</h3></div><small>{{ training_logs|length }} total</small></div>
+        <div class="question-list division-training-list division-log-list">
+          {% for log in training_logs %}
+            <details class="division-log-card">
+              <summary>
+                <div class="division-log-identity"><span>Training Record</span><h3>{{ log.training_title }}</h3><p>{{ log.training_datetime }}</p></div>
+                <div class="division-log-summary-meta"><strong>{{ log.departments|length }}</strong><small>department{% if log.departments|length != 1 %}s{% endif %}</small></div>
+                <span class="division-log-chevron" aria-hidden="true">&#8964;</span>
+              </summary>
+              <div class="division-log-card-body">
+                <div class="division-log-facts">
+                  <div><span>Logged By</span><strong>{{ log.trainer_callsign|bracket_callsign }} {{ log.trainer_name }}</strong></div>
+                  <div><span>Created</span><strong>{{ log.created_at }}</strong></div>
+                  <div><span>Departments</span><strong>{{ log.departments|join(', ') }}</strong></div>
+                </div>
+                {% if log.attendees %}<section><span>Attendees</span><p>{{ log.attendees }}</p></section>{% endif %}
+                <section class="division-log-notes"><span>Training Notes</span><p>{{ log.notes }}</p></section>
+              </div>
+            </details>
+          {% else %}
+            <article class="question-card division-log-empty">
+              <span>Training Archive</span><h2>No training records yet</h2><p>Saved division training sessions will appear here.</p>
+            </article>
+          {% endfor %}
+        </div>
+      </section>
+
+      <section class="tab-panel division-certifications-panel">
+        <div>
+          <h2>Certification Logs</h2>
+          <p>Record certifications by selecting the officer from accounts. The certifier is filled from your login.</p>
+        </div>
+        <form method="post" action="{{ url_for('add_division_certification_log') }}" class="custom-question-form division-training-form">
+          <label>
+            <span>Certified Officer *</span>
+            <select name="certified_user_id" required>
+              <option value="">Select Officer</option>
+              {% for target in certification_targets %}
+                <option value="{{ target.id }}">
+                  {% if target.callsign %}{{ target.callsign|bracket_callsign }} {% endif %}{{ target.display_name or target.username }}
+                </option>
+              {% endfor %}
+            </select>
+          </label>
+          <label>
+            <span>Certification *</span>
+            <input name="certification_name" placeholder="SWAT Cert / Transport Cert / Firearms Cert" required>
+          </label>
+          <label>
+            <span>Date / Time *</span>
+            <input name="certification_datetime" type="datetime-local" required>
+          </label>
+          <label>
+            <span>Certification Done By</span>
+            <input value="{% if certifier_callsign %}{{ certifier_callsign|bracket_callsign }} {% endif %}{{ certifier_name }}" readonly>
+          </label>
+          <label class="wide-field">
+            <span>Notes</span>
+            <textarea name="notes" rows="4" placeholder="Anything command should know about this certification."></textarea>
+          </label>
+          <button class="small-button" type="submit">Save Certification Log</button>
+        </form>
+
+        <div class="question-list division-training-list">
+          {% for cert in certification_logs %}
+            <article class="question-card">
+              <div class="question-head">
+                <span>{{ cert.created_at }}</span>
+                <strong>{{ cert.certification_name }}</strong>
+              </div>
+              <h2>{{ cert.certification_datetime }}</h2>
+              <p><b>Certified Officer:</b> {{ cert.certified_callsign|bracket_callsign }} {{ cert.certified_name }}</p>
+              <p><b>Certification Done By:</b> {{ cert.certifier_callsign|bracket_callsign }} {{ cert.certifier_name }}</p>
+              {% if cert.notes %}<p><b>Notes:</b><br>{{ cert.notes }}</p>{% endif %}
+            </article>
+          {% else %}
+            <article class="question-card">
+              <h2>No certification logs yet.</h2>
+              <p>Saved certifications will show here.</p>
+            </article>
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
+    </section>
+  </main>
+  <script>
+    const divisionTabIds = ["division-applications-tab"];
+    const divisionApplicationList = document.querySelector("#division-application-list");
+
+    function setDivisionTab(tabId, replace = false) {
+      if (!divisionTabIds.includes(tabId)) return;
+      const tab = document.getElementById(tabId);
+      if (!tab) return;
+      tab.checked = true;
+      const nextUrl = `${window.location.pathname}${window.location.search}#${tabId}`;
+      if (replace) {
+        window.history.replaceState(null, "", nextUrl);
+      } else {
+        window.history.pushState(null, "", nextUrl);
+      }
+    }
+
+    const initialDivisionTab = window.location.hash.slice(1);
+    if (divisionTabIds.includes(initialDivisionTab)) {
+      setDivisionTab(initialDivisionTab, true);
+    }
+
+    for (const tabId of divisionTabIds) {
+      document.querySelector(`label[for="${tabId}"]`)?.addEventListener("click", () => {
+        setDivisionTab(tabId);
+      });
+    }
+
+    document.addEventListener("submit", (event) => {
+      const form = event.target.closest("form");
+      if (!form || form.method.toLowerCase() !== "post") return;
+      let input = form.querySelector('input[name="active_tab"]');
+      if (!input) {
+        input = document.createElement("input");
+        input.type = "hidden";
+        input.name = "active_tab";
+        form.append(input);
+      }
+      input.value = document.querySelector('input[name="division-tab"]:checked')?.id || "division-applications-tab";
+    });
+
+    function escapeHtml(value) {
+      return String(value ?? "").replace(/[&<>"']/g, (char) => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;",
+      }[char]));
+    }
+
+    function emptyCard(title, text) {
+      return `
+        <article class="question-card">
+          <h2>${escapeHtml(title)}</h2>
+          <p>${escapeHtml(text)}</p>
+        </article>
+      `;
+    }
+
+    function openCardIds(container) {
+      return new Set([...container.querySelectorAll("details[open][data-live-card-id]")].map((card) => card.dataset.liveCardId));
+    }
+
+    function restoreOpenCards(container, ids) {
+      for (const card of container.querySelectorAll("details[data-live-card-id]")) {
+        if (ids.has(card.dataset.liveCardId)) {
+          card.open = true;
+        }
+      }
+    }
+
+    function applicationCard(application) {
+      const userVote = application.user_vote || "";
+      const clearVote = userVote ? '<button class="button secondary small-button" name="vote" value="clear" type="submit">Clear Vote</button>' : "";
+      const decisionStatus = application.decision_status || "pending";
+      const decisionTitle = decisionStatus.charAt(0).toUpperCase() + decisionStatus.slice(1);
+      const decisionLine = application.decided_at ? ` &middot; Decided ${escapeHtml(application.decided_at)}` : "";
+      const voteControls = application.is_final
+        ? `<p class="application-vote-closed">Voting closed with this application ${escapeHtml(decisionStatus)}.</p>`
+        : `
+              <form method="post" action="/supervisor/applications/${application.id}/vote" class="application-vote-form" data-application-vote>
+                <button class="button small-button ${userVote === "yes" ? "vote-selected" : ""}" name="vote" value="yes" type="submit">Yes</button>
+                <button class="button secondary small-button ${userVote === "no" ? "vote-selected" : ""}" name="vote" value="no" type="submit">No</button>
+                <button class="button secondary small-button ${userVote === "abstain" ? "vote-selected" : ""}" name="vote" value="abstain" type="submit">Abstain</button>
+                ${clearVote}
+              </form>
+          `;
+      const responses = application.responses
+        .filter((response) => response.answer)
+        .map((response) => `<article><b>${escapeHtml(response.label)}</b><p>${escapeHtml(response.answer)}</p></article>`)
+        .join("");
+      return `
+        <details class="complaint-card division-application-card ${escapeHtml(decisionStatus)}" data-live-card-id="${application.id}">
+          <summary class="complaint-card-head">
+            <div class="division-applicant-identity">
+              <span>Submission #${application.id} &middot; ${escapeHtml(application.created_at)}</span>
+              <h3>${escapeHtml(application.full_name)}</h3>
+              <p><b>${escapeHtml(String(application.application_type).toUpperCase())}</b><i></i>${escapeHtml(application.callsign)}<i></i>${escapeHtml(application.rank)}</p>
+            </div>
+            <div class="cadet-card-meta application-status-card ${escapeHtml(decisionStatus)}">
+              <strong>${escapeHtml(decisionTitle)}</strong>
+              <small>${escapeHtml(application.total_votes || 0)}/${escapeHtml(application.required_votes || 0)} votes</small>
+            </div>
+            <span class="division-application-chevron" aria-hidden="true">⌄</span>
+          </summary>
+          <div class="complaint-card-body">
+            <div class="complaint-grid division-applicant-facts">
+              <p><span>Discord</span><b>${escapeHtml(application.discord_username)}</b></p>
+              <p><span>Callsign</span><b>${escapeHtml(application.callsign)}</b></p>
+              <p><span>Current Rank</span><b>${escapeHtml(application.rank)}</b></p>
+              <p><span>Application</span><b>${escapeHtml(application.application_title)}</b></p>
+            </div>
+            <div class="application-vote-box">
+              <div class="application-decision-line">
+                <strong>Status: ${escapeHtml(decisionTitle)}</strong>
+                <span>${escapeHtml(application.total_votes || 0)} of ${escapeHtml(application.required_votes || 0)} command votes submitted${decisionLine}</span>
+              </div>
+              <div class="vote-total-strip">
+                <span>Yes: <b>${escapeHtml(application.yes_votes || 0)}</b></span>
+                <span>No: <b>${escapeHtml(application.no_votes || 0)}</b></span>
+                <span>Abstain: <b>${escapeHtml(application.abstain_votes || 0)}</b></span>
+              </div>
+              ${voteControls}
+              <form class="application-override-form" method="post" data-application-override>
+                <span>Command Decision</span>
+                <button class="small-button" formaction="/supervisor/applications/${application.id}/override/accept" type="submit">Accept</button>
+                <button class="button danger small-button" formaction="/supervisor/applications/${application.id}/override/deny" type="submit">Deny</button>
+              </form>
+            </div>
+            <section class="division-application-responses"><header><span>Candidate Responses</span><strong>Application Review</strong></header>${responses}</section>
+          </div>
+        </details>
+      `;
+    }
+
+    async function refreshDivisionApplications() {
+      if (!divisionApplicationList) return;
+      const openIds = openCardIds(divisionApplicationList);
+      try {
+        const response = await fetch(divisionApplicationList.dataset.liveUrl, { headers: { Accept: "application/json" } });
+        if (!response.ok) return;
+        const data = await response.json();
+        const items = data.applications || [];
+        const count = document.getElementById("division-application-count");
+        if (count) count.textContent = String(items.length);
+        divisionApplicationList.innerHTML = items.length
+          ? items.map(applicationCard).join("")
+          : emptyCard("No applications submitted yet.", "FTP and ERT applications submitted from the application links will show here.");
+        restoreOpenCards(divisionApplicationList, openIds);
+      } catch (error) {
+        // Keep the current cards visible if a background refresh briefly loses its connection.
+      }
+    }
+
+    document.addEventListener("submit", async (event) => {
+      const form = event.target.closest("[data-application-vote]");
+      if (!form) return;
+      event.preventDefault();
+      const submitter = event.submitter;
+      const body = new FormData(form);
+      if (submitter?.name) {
+        body.set(submitter.name, submitter.value);
+      }
+      const response = await fetch(form.action, { method: "POST", body, headers: { Accept: "application/json" } });
+      if (!response.ok) return;
+      refreshDivisionApplications();
+    });
+
+    document.addEventListener("submit", async (event) => {
+      const form = event.target.closest("[data-application-override]");
+      if (!form) return;
+      event.preventDefault();
+      const action = event.submitter?.formAction || form.action;
+      const response = await fetch(action, { method: "POST", headers: { Accept: "application/json" } });
+      if (!response.ok) return;
+      refreshDivisionApplications();
+    });
+
+    refreshDivisionApplications();
+    setInterval(() => { if (!document.hidden) refreshDivisionApplications(); }, 5000);
+  </script>
+</body>
+</html>

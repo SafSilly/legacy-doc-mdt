@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Developer Panel</title>
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='bolingbroke-logo.png') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body class="{% if request.args.get('embed') %}embedded-panel-body{% endif %}">
+  <main class="shell dev-shell">
+    <nav class="top-actions">
+      {% include "_back_button.html" %}
+      <a class="button secondary" href="{{ url_for('hub') }}">Hub</a>
+      <a class="button secondary" href="{{ url_for('admin_panel') }}">Admin</a>
+      <form method="post" action="{{ url_for('supervisor_logout') }}">
+        <button class="button secondary" type="submit">Log Out</button>
+      </form>
+    </nav>
+
+    <header class="hero dev-hero">
+      <div class="brand-block">
+        <img class="site-logo" src="{{ url_for('static', filename='bolingbroke-logo.png') }}" alt="Bolingbroke State Penitentiary logo">
+        <div>
+          <p class="eyebrow">{{ 'Developer Tools' if embedded else 'Owner Developer Tools' }}</p>
+          <h1>Developer Panel</h1>
+          <p class="lede">Build status, safe diagnostics, app structure, config checks, and login audit tools.</p>
+        </div>
+      </div>
+{% if not embedded %}      <div class="score-card">
+        <span>Mode</span>
+        <strong>Dev</strong>
+        <small>owner only</small>
+      </div>{% endif %}
+    </header>
+
+    <section class="dev-stat-grid">
+      <article class="dev-stat-card"><div class="dev-stat-icon">G</div><span>Git Branch</span><strong>{{ dev.git.branch }}</strong><small>{{ dev.git.commit }} commit</small></article>
+      <article class="dev-stat-card"><div class="dev-stat-icon">R</div><span>Routes</span><strong>{{ dev.runtime.routes }}</strong><small>registered endpoints</small></article>
+      <article class="dev-stat-card"><div class="dev-stat-icon">D</div><span>Database</span><strong>{{ dev.database.size }}</strong><small>{{ dev.table_counts|length }} tables</small></article>
+      <article class="dev-stat-card"><div class="dev-stat-icon">A</div><span>Assets</span><strong>{{ dev.assets.static_files }}</strong><small>{{ dev.assets.static_size }} static</small></article>
+      <article class="dev-stat-card"><div class="dev-stat-icon">L</div><span>Logins</span><strong>{{ dev.recent_logins|length }}</strong><small>latest sign-ins</small></article>
+    </section>
+
+    <section class="dev-console-grid">
+      <article class="panel dev-command-card">
+        <div>
+          <p class="eyebrow">Runtime Snapshot</p>
+          <h2>App Health</h2>
+        </div>
+        <div class="dev-command-metrics">
+          <span><b>{{ dev.runtime.python }}</b> Python</span>
+          <span><b>{{ dev.runtime.server_time }}</b> server time</span>
+          <span><b>{{ dev.runtime.static_version }}</b> static version</span>
+          <span><b>{{ dev.git.status if dev.git.status in ['Clean', 'Unavailable', 'Hosted deploy'] else 'Dirty' }}</b> Git state</span>
+        </div>
+      </article>
+
+      <article class="panel dev-command-card">
+        <div>
+          <p class="eyebrow">Developer Watchlist</p>
+          <h2>Needs Attention</h2>
+        </div>
+        <div class="dev-warning-grid compact">
+          {% for warning in dev.warnings %}
+            <div class="{% if warning == 'No major warnings found.' %}good{% endif %}">{{ warning }}</div>
+          {% endfor %}
+        </div>
+      </article>
+    </section>
+
+    <section class="panel dev-card dev-wide dev-action-panel">
+      <div>
+        <p class="eyebrow">Dev Options</p>
+        <h2>Safe Diagnostic Links</h2>
+        <p>Open read-only JSON views for quick checks without changing site data.</p>
+      </div>
+      <div class="dev-action-grid">
+        <a class="button" href="{{ url_for('dev_health_json') }}" target="_blank" rel="noopener">Health JSON</a>
+        <a class="button secondary" href="{{ url_for('dev_routes_json') }}" target="_blank" rel="noopener">Routes JSON</a>
+        <a class="button secondary" href="{{ url_for('dev_schema_json') }}" target="_blank" rel="noopener">Schema JSON</a>
+        <a class="button secondary" href="{{ url_for('dev_panel') }}">Refresh Panel</a>
+        <a class="button secondary" href="{{ url_for('hub') }}">Hub</a>
+        <a class="button secondary" href="{{ url_for('admin_panel', _anchor='accounts-tab') }}">Accounts</a>
+      </div>
+    </section>
+
+    <section class="dev-accordion" aria-label="Developer tools">
+      <details class="dev-dropdown" open>
+        <summary><span>Login Audit</span><b>{{ dev.recent_logins|length }} shown</b></summary>
+        <div class="dev-dropdown-body">
+          <div class="dev-login-card-grid">
+            {% for login in dev.recent_logins[:4] %}
+              <article class="dev-login-card" title="{{ login.user_agent }}">
+                <div class="dev-login-avatar">{{ (login.display_name or login.username)[:1]|upper }}</div>
+                <div>
+                  <strong>{{ login.display_name or login.username }}</strong>
+                  <span>{{ login.username }}{% if login.callsign %} / {{ login.callsign|bracket_callsign }}{% endif %}</span>
+                </div>
+                <div class="dev-login-meta">
+                  <b>{{ login.role|title }}</b>
+                  <small>{{ login.ip_address or 'Unknown IP' }} - {{ login.created_at }}</small>
+                </div>
+              </article>
+            {% else %}
+              <article class="dev-empty-card"><strong>No login history yet</strong><span>Successful sign-ins will appear here.</span></article>
+            {% endfor %}
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>User</th><th>Name</th><th>Callsign</th><th>Role</th><th>Division</th><th>Phone</th><th>IP</th><th>Time</th></tr></thead>
+              <tbody>
+                {% for login in dev.recent_logins %}
+                  <tr title="{{ login.user_agent }}">
+                    <td>{{ login.username }}</td>
+                    <td>{{ login.display_name or 'No name' }}</td>
+                    <td>{{ login.callsign|bracket_callsign if login.callsign else 'No callsign' }}</td>
+                    <td>{{ login.role|title }}</td>
+                    <td>{{ dev.runtime.division_rank_labels.get(login.division_rank, login.division_rank) if login.division_rank else 'None' }}</td>
+                    <td>{{ login.phone_number or 'None' }}</td>
+                    <td>{{ login.ip_address or 'Unknown' }}</td>
+                    <td>{{ login.created_at }}</td>
+                  </tr>
+                {% else %}
+                  <tr><td colspan="8">No login history recorded yet.</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </details>
+
+      <details class="dev-dropdown">
+        <summary><span>Git And Deploy</span><b>{{ dev.git.status if dev.git.status in ['Clean', 'Unavailable', 'Hosted deploy'] else 'Needs review' }}</b></summary>
+        <div class="dev-dropdown-body dev-grid">
+          <article class="dev-subcard">
+            <h3>Repository</h3>
+            <dl class="dev-detail-list">
+              <div><dt>Branch</dt><dd>{{ dev.git.branch }}</dd></div>
+              <div><dt>Commit</dt><dd>{{ dev.git.commit }}</dd></div>
+              <div><dt>Remote</dt><dd>{{ dev.git.remote }}</dd></div>
+              <div><dt>Service</dt><dd>{{ dev.git.service }}</dd></div>
+              <div><dt>Deploy</dt><dd>{{ dev.git.deploy_commit }}</dd></div>
+            </dl>
+          </article>
+          <article class="dev-subcard">
+            <h3>Deploy State</h3>
+            <div class="dev-code-box">{{ dev.git.status }}</div>
+          </article>
+          <article class="dev-subcard dev-wide">
+            <h3>Recent Commits</h3>
+            <div class="dev-code-box">{{ dev.git.recent_commits }}</div>
+          </article>
+        </div>
+      </details>
+
+      <details class="dev-dropdown">
+        <summary><span>Environment And Config</span><b>{{ dev.runtime.secret_key }}</b></summary>
+        <div class="dev-dropdown-body dev-grid">
+          <article class="dev-subcard">
+            <h3>Runtime</h3>
+            <dl class="dev-detail-list">
+              <div><dt>Python</dt><dd>{{ dev.runtime.python }}</dd></div>
+              <div><dt>Platform</dt><dd>{{ dev.runtime.platform }}</dd></div>
+              <div><dt>Server Time</dt><dd>{{ dev.runtime.server_time }}</dd></div>
+              <div><dt>Database URL</dt><dd>{{ dev.runtime.database_url }}</dd></div>
+            </dl>
+          </article>
+          <article class="dev-subcard">
+            <h3>Environment Flags</h3>
+            <div class="dev-chip-grid">
+              {% for key, value in dev.env_flags.items() %}
+                <span><b>{{ key }}</b>{{ value }}</span>
+              {% endfor %}
+            </div>
+          </article>
+        </div>
+      </details>
+
+      <details class="dev-dropdown">
+        <summary><span>Database Schema</span><b>{{ dev.table_counts|length }} tables</b></summary>
+        <div class="dev-dropdown-body">
+          <div class="dev-schema-grid">
+            {% for table in dev.table_schema %}
+              <article class="dev-schema-card">
+                <header><strong>{{ table.name }}</strong><span>{{ table.rows }} rows</span></header>
+                <p>{{ table.columns|join(', ') }}</p>
+              </article>
+            {% endfor %}
+          </div>
+        </div>
+      </details>
+
+      <details class="dev-dropdown">
+        <summary><span>Assets And Templates</span><b>{{ dev.assets.static_size }}</b></summary>
+        <div class="dev-dropdown-body dev-grid">
+          <article class="dev-subcard">
+            <h3>Inventory</h3>
+            <dl class="dev-detail-list">
+              <div><dt>Templates</dt><dd>{{ dev.assets.templates }}</dd></div>
+              <div><dt>Static Files</dt><dd>{{ dev.assets.static_files }}</dd></div>
+              <div><dt>CSS</dt><dd>{{ dev.assets.types.css }}</dd></div>
+              <div><dt>JavaScript</dt><dd>{{ dev.assets.types.js }}</dd></div>
+              <div><dt>Images</dt><dd>{{ dev.assets.types.images }}</dd></div>
+            </dl>
+          </article>
+          <article class="dev-subcard">
+            <h3>Largest Static Files</h3>
+            <div class="dev-list">
+              {% for asset in dev.assets.largest_static %}
+                <div><strong>{{ asset.path }}</strong><span>{{ asset.size }}</span></div>
+              {% else %}
+                <p>No static files found.</p>
+              {% endfor %}
+            </div>
+          </article>
+        </div>
+      </details>
+
+      <details class="dev-dropdown">
+        <summary><span>Route Map</span><b>{{ dev.runtime.routes }} routes</b></summary>
+        <div class="dev-dropdown-body">
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Method</th><th>Route</th><th>Endpoint</th></tr></thead>
+              <tbody>
+                {% for route in dev.routes %}
+                  <tr><td>{{ route.methods }}</td><td>{{ route.rule }}</td><td>{{ route.endpoint }}</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </details>
+    </section>
+  </main>
+</body>
+</html>

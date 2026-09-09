@@ -1,0 +1,65 @@
+<section class="tab-panel training-results-panel overview-section">
+  <header class="supervisor-workspace-head training-results-heading">
+    <div><p class="eyebrow">Knowledge Review</p><h2>Training Results</h2><span>Review Full SOP and 10-Codes quizzes alongside focused Employee Hub training sessions.</span></div>
+    <div class="workspace-stat"><strong>{{ training_results|length + training_quiz_results|length }}</strong><span>results</span></div>
+  </header>
+  <div class="training-results-toolbar">
+    <label><span>Search results</span><input type="search" placeholder="Employee, callsign, or training topic..." data-training-result-search></label>
+    <label><span>Completion</span><select data-training-result-filter><option value="all">All results</option><option value="complete">Fully answered</option><option value="incomplete">Skipped questions</option></select></label>
+    <button class="button secondary small-button" type="button" data-training-result-clear>Clear</button>
+  </div>
+  <div class="training-result-list">
+    {% if training_quiz_results %}
+      <div class="training-result-group-heading"><div><span>Complete Practice Banks</span><h3>Training Quiz Results</h3></div><b>{{ training_quiz_results|length }} result{% if training_quiz_results|length != 1 %}s{% endif %}</b></div>
+    {% endif %}
+    {% for result in training_quiz_results %}
+      <details class="training-result-card training-quiz-result-card" data-training-result-card data-status="{{ 'incomplete' if result.skipped_count else 'complete' }}" data-search="{{ (result.callsign ~ ' ' ~ result.trainee_name ~ ' ' ~ result.quiz_title)|lower }}">
+        <summary>
+          <div class="training-result-identity"><span>Quiz Result #{{ result.id }}</span><h3>{% if result.callsign %}{{ result.callsign|bracket_callsign }} {% endif %}{{ result.trainee_name }}</h3><small>{{ result.quiz_title }}</small></div>
+          <div class="training-result-score"><strong>{{ result.score }}%</strong><span>{{ result.correct_count }}/{{ result.total_count }} graded correct</span></div>
+          <div class="training-result-review-meta"><div><b>{{ result.answered_count }}</b><span>answered</span></div><div><b>{{ result.skipped_count }}</b><span>skipped</span></div><time data-local-time="{{ result.created_at }}">{{ result.created_at }}</time><em>Review <i>&#8964;</i></em></div>
+        </summary>
+        <div class="training-result-detail-head"><div><span>Quiz Response Review</span><strong>{{ result.quiz_title }}</strong></div><p>{{ result.answered_count }} answered out of {{ result.responses|length }} saved questions.</p></div>
+        <div class="training-result-responses">
+          {% for response in result.responses %}
+            <article class="{{ 'written' if response.review_only else ('correct' if response.is_correct else 'incorrect') }}">
+              <div><span>Question {{ response.number or loop.index }}</span><b>{{ 'Written Response' if response.review_only else 'Multiple Choice' }}</b><em class="{% if response.review_only %}written{% elif response.is_correct %}correct{% else %}incorrect{% endif %}">{% if response.review_only %}Written{% elif response.is_correct %}Correct{% else %}Incorrect{% endif %}</em></div>
+              <h3>{{ response.prompt }}</h3>
+              <div class="training-response-answer"><span>Submitted response</span><p>{{ response.selected or 'No response submitted.' }}</p></div>
+              <div class="training-response-answer expected"><span>Expected answer</span><p>{{ response.answer }}</p></div>
+            </article>
+          {% else %}
+            <p class="muted-note">This older quiz result does not contain question-level response data.</p>
+          {% endfor %}
+        </div>
+      </details>
+    {% endfor %}
+    {% if training_results %}
+      <div class="training-result-group-heading focused"><div><span>Focused Subjects</span><h3>Topic Training Results</h3></div><b>{{ training_results|length }} result{% if training_results|length != 1 %}s{% endif %}</b></div>
+    {% endif %}
+    {% for result in training_results %}
+      {% set graded_percent = ((result.correct_count / result.multiple_choice_total * 100)|round|int) if result.multiple_choice_total else 0 %}
+      <details class="training-result-card" data-training-result-card data-status="{{ 'incomplete' if result.skipped_count else 'complete' }}" data-search="{{ (result.callsign ~ ' ' ~ result.trainee_name ~ ' ' ~ result.category_title)|lower }}">
+        <summary>
+          <div class="training-result-identity"><span>Training Result #{{ result.id }}</span><h3>{% if result.callsign %}{{ result.callsign|bracket_callsign }} {% endif %}{{ result.trainee_name }}</h3><small>{{ result.category_title }}</small></div>
+          <div class="training-result-score"><strong>{{ graded_percent }}%</strong><span>{{ result.correct_count }}/{{ result.multiple_choice_total }} graded correct</span></div>
+          <div class="training-result-review-meta"><div><b>{{ result.answered_count }}</b><span>answered</span></div><div><b>{{ result.skipped_count }}</b><span>skipped</span></div><time data-local-time="{{ result.created_at }}">{{ result.created_at }}</time><em>Review <i>⌄</i></em></div>
+        </summary>
+        <div class="training-result-detail-head"><div><span>Response Review</span><strong>{{ result.category_title }}</strong></div><p>{{ result.answered_count }} answered out of {{ result.responses|length }} questions.</p></div>
+        <div class="training-result-responses">
+          {% for response in result.responses %}
+            <article class="{{ 'skipped' if response.skipped else ('correct' if response.type == 'multiple_choice' and response.correct else ('incorrect' if response.type == 'multiple_choice' else 'written')) }}">
+              <div><span>Question {{ loop.index }}</span><b>{{ response.type|replace('_', ' ')|title }}</b>{% if response.skipped %}<em>Skipped</em>{% elif response.type == 'multiple_choice' %}<em class="{{ 'correct' if response.correct else 'incorrect' }}">{{ 'Correct' if response.correct else 'Incorrect' }}</em>{% endif %}</div>
+              <h3>{{ response.prompt }}</h3>
+              <div class="training-response-answer"><span>Submitted response</span><p>{{ response.response or 'No response submitted.' }}</p></div>
+            </article>
+          {% else %}
+            <p class="muted-note">No question details were saved for this result.</p>
+          {% endfor %}
+        </div>
+      </details>
+    {% else %}
+      {% if not training_quiz_results %}<article class="workspace-empty"><strong>No training results yet</strong><span>Completed training quizzes and focused Employee Hub sessions will appear here.</span></article>{% endif %}
+    {% endfor %}
+  </div>
+</section>

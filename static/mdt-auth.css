@@ -1,0 +1,38 @@
+.terminal-auth { color-scheme:dark; margin:0; min-height:100vh; background:radial-gradient(ellipse at 50% 15%,#1c1911 0,#0e0e0d 45%,#020202 95%); color:#f2f2f2; display:grid; place-items:center; font-family:Inter,ui-sans-serif,system-ui,sans-serif; }
+.terminal-auth-shell { width:min(448px,calc(100% - 32px)); padding:50px 0; }
+.terminal-auth-brand { display:flex; justify-content:center; align-items:center; gap:9px; margin:0 0 24px; color:#aaa69c; font-size:13px; letter-spacing:.02em; }
+.terminal-auth svg { width:17px; height:17px; fill:none; stroke:currentColor; stroke-width:1.6; flex-shrink:0; }
+.terminal-auth-card { padding:24px; border:1px solid #36332b; border-radius:18px; background:linear-gradient(145deg,#1b1a17,#101010); box-shadow:0 24px 90px #0005; }
+.terminal-auth-heading { display:flex; align-items:center; gap:12px; margin-bottom:24px; }
+.terminal-auth-heading h1 { font-size:19px; font-weight:750; margin:0 0 2px; letter-spacing:-.025em; }
+.terminal-auth-heading p { font-size:12px; color:#a19e96; margin:0; line-height:1.5; }
+.terminal-auth-seal { display:grid; place-items:center; width:50px; height:50px; flex-shrink:0; border-radius:15px; background:#29261f; border:1px solid #39352a; }
+.terminal-auth-seal img { width:34px; height:34px; object-fit:contain; }
+.terminal-auth-form { display:grid; gap:7px; }
+.terminal-auth-form label { font-size:12px; color:#aaa79e; margin-top:8px; }
+.terminal-auth input { width:100%; height:42px; border:1px solid #444033; border-radius:13px; padding:10px 13px; background:#22211d; color:#f5f1e8; font-family:inherit; font-size:14px; box-shadow:none; }
+.terminal-auth input::placeholder { color:#8c887d; }
+.terminal-auth input:focus { outline:2px solid #c9a24a; outline-offset:2px; }
+.terminal-auth input:-webkit-autofill { -webkit-box-shadow:0 0 0 1000px #f7f1cc inset; -webkit-text-fill-color:#171717; }
+.terminal-input { position:relative; display:flex; align-items:center; }
+.terminal-input > svg { position:absolute; left:13px; color:#c4b98f; pointer-events:none; z-index:1; }
+.terminal-auth .terminal-input input { padding-left:39px; padding-right:42px; background:#f7f1cc; color:#171717; }
+.terminal-auth .terminal-input > svg, .terminal-auth .terminal-input .terminal-reveal { color:#8c8054; }
+.terminal-auth .terminal-input input:-webkit-autofill:focus { -webkit-box-shadow:0 0 0 1000px #f7f1cc inset; -webkit-text-fill-color:#171717; }
+.terminal-auth button.terminal-reveal { position:absolute; right:8px; width:30px; height:30px; min-height:0; padding:6px; border:0; background:transparent; color:#b4aa8f; box-shadow:none; display:grid; place-items:center; }
+.terminal-auth .terminal-submit { display:flex; align-items:center; justify-content:center; gap:8px; width:100%; min-height:47px; margin-top:8px; padding:11px; border-radius:14px; border:1px solid #ac8736; background:#c9a24a; color:#17140d; font-size:16px; font-weight:650; cursor:pointer; box-shadow:none; }
+.terminal-auth .terminal-submit:hover { background:#d8b55e; }
+.terminal-divider { display:flex; align-items:center; gap:12px; margin:21px 0 16px; color:#8c8981; font-size:11px; }
+.terminal-divider::before,.terminal-divider::after { content:''; height:1px; background:#33312a; flex:1; }
+.terminal-help { display:block; text-align:center; padding:11px; border:1px solid #36342d; border-radius:14px; color:#d1cec5; background:#22211e; text-decoration:none; font-size:14px; }
+.terminal-help:hover { border-color:#9b8045; color:#eddaa8; }
+.terminal-auth-notice { color:#85827b; font-size:11px; text-align:center; margin:17px 0 0; }
+.terminal-auth-footer { display:flex; justify-content:center; gap:15px; margin-top:25px; color:#777164; font-size:11px; }
+.terminal-auth-footer a { color:#a79b7d; text-decoration:none; }
+.terminal-description { font-size:12px; line-height:1.7; color:#b4afa3; }
+.terminal-request { border:1px solid #39352b; border-radius:12px; padding:12px; margin-top:16px; }
+.terminal-request summary { color:#e0c17f; font-size:13px; cursor:pointer; }
+.terminal-back { display:block; color:#cdb478; font-size:13px; text-align:center; margin-top:18px; }
+.terminal-auth .flash { font-size:12px; line-height:1.6; padding:12px; }
+.terminal-auth .terminal-issued-code { font-family:ui-monospace,monospace; font-size:13px; margin:10px 0; }
+@media(max-width:480px) { .terminal-auth-shell { padding:28px 0; } .terminal-auth-card { padding:22px 18px; } .terminal-auth-heading p { font-size:11px; } }

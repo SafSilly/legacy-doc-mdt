@@ -1,0 +1,28 @@
+<section class="employee-profile-panel officer-notes" aria-labelledby="notes-heading">
+  <header><h2 id="notes-heading">Officer Notes</h2><span>Service updates</span></header>
+  <div class="officer-notes-body">
+    {% if record %}
+      {% if record.can_add %}
+      <form action="{{ url_for('mdt_officer_note', employee_id=record.id) }}" method="post" data-note-form>
+        <input type="hidden" name="csrf_token" value="{{ record.csrf }}">
+        <label for="new-officer-note">Add a note <small>Visible to signed-in personnel</small></label>
+        <textarea id="new-officer-note" name="body" maxlength="2000" rows="2" placeholder="Write an officer update…" required></textarea>
+        <div><span role="status"></span><button class="secondary small-button">Add Note</button></div>
+      </form>
+      {% endif %}
+      {% for note in record.notes %}
+      <article class="officer-note">
+        <header><strong>{{ note.author_name }}</strong><time>{{ note.created_at }}{% if note.updated_at %} · Edited {{ note.updated_at }}{% endif %}</time></header>
+        <p>{{ note.body }}</p>
+        {% if note.can_edit %}<details><summary>Edit note</summary>
+          <form action="{{ url_for('mdt_officer_note', employee_id=record.id) }}" method="post" data-note-form>
+            <input type="hidden" name="csrf_token" value="{{ record.csrf }}"><input type="hidden" name="note_id" value="{{ note.id }}"><input type="hidden" name="revision" value="{{ note.revision }}">
+            <label for="note-{{ note.id }}">Note text</label><textarea id="note-{{ note.id }}" name="body" maxlength="2000" rows="3" required>{{ note.body }}</textarea>
+            <div><span role="status"></span><button class="secondary small-button">Save Changes</button></div>
+          </form>
+        </details>{% endif %}
+      </article>
+      {% else %}<p class="notes-empty">No notes yet.</p>{% endfor %}
+    {% else %}<p class="notes-empty">Notes are available once this officer has an MDT account.</p>{% endif %}
+  </div>
+</section>

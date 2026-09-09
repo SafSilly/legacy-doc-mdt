@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>DOC Staff</title>
+  {% include "_social_meta.html" %}
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='bolingbroke-logo.png') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body class="{% if request.args.get('embed') %}embedded-panel-body{% endif %}">
+  <main class="shell">
+    {% include "_public_directory.html" %}
+
+    <header class="hero staff-hero">
+      <div class="brand-block">
+        <img class="site-logo" src="{{ url_for('static', filename='bolingbroke-logo.png') }}" alt="Bolingbroke State Penitentiary logo">
+        <div>
+          <p class="eyebrow">Department Roster</p>
+          {% if staff_sections is defined %}
+            <h1>Staff</h1>
+            <p class="lede">Command and supervisory staff for the San Andreas Department of Corrections.</p>
+          {% else %}
+            <h1>Official DOC Roster</h1>
+            <p class="lede">Live personnel roster from the Department of Corrections official record.</p>
+          {% endif %}
+        </div>
+      </div>
+    </header>
+
+    {% if staff_sections is defined %}
+      <div class="staff-section-stack">
+        {% for section in staff_sections %}
+          <section class="staff-section">
+            <header class="staff-section-head">
+              <div><span>Department leadership</span><h2>{{ section.title }}</h2></div>
+              <small>{{ section.members|length }} member{% if section.members|length != 1 %}s{% endif %}</small>
+            </header>
+            <div class="staff-grid">
+              {% for member in section.members %}
+                <article class="staff-card">
+                  <div class="staff-portrait" aria-hidden="true">
+                    {% if member.image %}<img src="{{ url_for('static', filename=member.image) }}" alt="" loading="lazy" decoding="async" onerror="this.remove(); this.parentElement.classList.add('missing-photo');">{% endif %}
+                    <span>{{ member.name.split()[0][0] }}{{ member.name.split()[-1][0] }}</span>
+                  </div>
+                  <div class="staff-card-copy"><h3>{{ member.name }}</h3><p>{{ member.rank }}</p></div>
+                </article>
+              {% endfor %}
+            </div>
+          </section>
+        {% endfor %}
+      </div>
+    {% else %}
+      <section class="staff-section official-roster-section">
+        <header class="official-roster-head"><div><p class="eyebrow">Live directory</p><h2>Department Personnel</h2><span>Active, Semi-Active, Inactive, and LOA personnel only.</span></div><div class="official-roster-actions"><small class="roster-sync-status" data-roster-sync="{{ roster_sync.synced_at }}">Updated just now</small><b>{{ roster_members|length }} listed</b><button class="roster-refresh-button" type="button" data-roster-refresh="department" aria-label="Refresh department roster" title="Refresh department roster"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0 2 5M20 4v7h-7"/></svg></button></div></header>
+        {% if roster_is_live %}
+          {% for section in roster_sections %}
+            <section class="official-roster-group">
+              <header><h3>{{ section.title }}</h3><span>{{ section.members|length }} listed</span></header>
+              <div class="official-roster-grid">
+                {% for member in section.members %}
+                <a class="official-roster-member{% if member.callsign|lower in roster_sync.changed_keys %} roster-member-changed{% endif %}" href="{{ url_for('employee_profile_by_callsign', callsign=member.callsign, embed='1' if request.args.get('embed') else None) }}" aria-label="View {{ member.name }} profile">
+                    <div class="official-roster-copy"><span>{{ member.callsign|bracket_callsign }}</span><h3>{{ member.name }}</h3><p>{{ member.rank }}</p><small>{{ member.authority }}{% if member.timezone %} · {{ member.timezone }}{% endif %}</small></div>
+                    <b class="official-roster-status {{ member.status|lower|replace('-', '') }}">{{ member.status }}</b>
+                    <span class="official-roster-profile-arrow" aria-hidden="true">→</span>
+                  </a>
+                {% endfor %}
+              </div>
+            </section>
+          {% endfor %}
+        {% else %}
+          <div class="workspace-empty"><strong>Official roster is temporarily unavailable</strong><span>Try again shortly—the site will reconnect to the DOC spreadsheet automatically.</span></div>
+        {% endif %}
+      </section>
+    {% endif %}
+
+    {% if staff_sections is defined %}{% include "_site_footer.html" %}{% endif %}
+  </main>
+  {% if staff_sections is not defined %}
+    <script>
+      document.querySelector("[data-roster-refresh]")?.addEventListener("click", async (event) => {
+        const button = event.currentTarget;
+        button.disabled = true;
+        try { await fetch("{{ url_for('refresh_live_roster', roster_name='department') }}", { method: "POST" }); window.location.reload(); }
+        catch (error) { button.disabled = false; }
+      });
+      document.querySelectorAll("[data-roster-sync]").forEach((item) => {
+        const syncedAt = Number(item.dataset.rosterSync || 0) * 1000;
+        if (!syncedAt) { item.textContent = "Awaiting sync"; return; }
+        const minutes = Math.max(0, Math.floor((Date.now() - syncedAt) / 60000));
+        item.textContent = minutes < 1 ? "Updated just now" : `Updated ${minutes} min ago`;
+      });
+    </script>
+  {% endif %}
+</body>
+</html>

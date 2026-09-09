@@ -1,0 +1,9 @@
+{% if pending %}
+<dialog class="mdt-dialog mdt-callsign-dialog" id="callsign-selection" data-pending-callsign>
+  <form method="post" action="{{ url_for('mdt_claim_callsign') }}"><p class="eyebrow">New rank assignment</p><h2>Choose your callsign</h2><p>You are now a <strong>{{ ranks[me.department_rank][0] }}</strong>. Select an available number to complete your assignment.</p><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><input type="hidden" name="rank" value="{{ me.department_rank }}">
+  {% if not roster_ok %}<p role="status">The official roster could not be checked. Selection will reopen when it reconnects.</p><a class="button" href="{{ url_for('mdt_home') }}">Retry roster check</a>
+  {% elif not available_numbers %}<p role="status">No numbers are available in this rank. Contact an administrator to review the assignments.</p>
+  {% else %}<p class="mdt-muted">{{ available_numbers|length }} numbers available · {{ rank_prefix(me.department_rank) }}-{{ ranks[me.department_rank][1] }}–{{ ranks[me.department_rank][2] }}</p><fieldset class="mdt-number-grid"><legend class="sr-only">Available callsign numbers</legend>{% for number in available_numbers %}<label><input type="radio" name="number" value="{{ number }}" required><span>{{ number }}</span></label>{% endfor %}</fieldset><button type="submit">Assign selected callsign</button>{% endif %}
+  <button type="button" class="secondary" data-close-dialog>Choose later</button><p class="mdt-muted">Your current callsign stays reserved until a new one is selected.</p></form>
+</dialog>
+{% endif %}

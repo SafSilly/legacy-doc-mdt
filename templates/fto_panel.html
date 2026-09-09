@@ -1,0 +1,947 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FTP Panel</title>
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='bolingbroke-logo.png') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  <script defer src="{{ url_for('static', filename='live-actions.js') }}"></script>
+</head>
+<body class="{% if request.args.get('embed') %}embedded-panel-body{% endif %}">
+  <main class="shell">
+    <nav class="top-actions">
+      {% include "_back_button.html" %}
+      <a class="button secondary" href="{{ url_for('quiz_home') }}">Quiz Site</a>
+      <a class="button secondary" href="{{ url_for('hub') }}">Hub</a>
+      <form method="post" action="{{ url_for('supervisor_logout') }}">
+        <button class="button secondary" type="submit">Log Out</button>
+      </form>
+    </nav>
+
+    <header class="hero">
+      <div class="brand-block">
+        <img class="site-logo" src="{{ url_for('static', filename='bolingbroke-logo.png') }}" alt="Bolingbroke State Penitentiary logo">
+        <div>
+          <p class="eyebrow">Cadet Operations</p>
+          <h1>FTP Panel</h1>
+          <p class="lede">Track active cadets, training reports, and history for each cadet.</p>
+        </div>
+      </div>
+      <div class="score-card">
+        <span>Active Cadets</span>
+        <strong>{{ cadets|length }}</strong>
+        <small>currently listed</small>
+      </div>
+    </header>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <section class="flash-stack">
+          {% for category, message in messages %}
+            <div class="flash {{ category }}">{{ message }}</div>
+          {% endfor %}
+        </section>
+      {% endif %}
+    {% endwith %}
+
+    <section class="panel custom-question-panel boxed-section fto-box fto-add-cadet-panel">
+      <div>
+        <h2>Add Active Cadet</h2>
+        <p>Add cadets here before logging FTP training reports.</p>
+      </div>
+      <form method="post" action="{{ url_for('add_cadet') }}" class="custom-question-form" data-add-cadet-form>
+        <label class="wide-field">
+          <span>Cadet Account</span>
+          <select name="cadet_user_id" data-cadet-account-picker required>
+            <option value="">Select a Cadet account</option>
+            {% for account in cadet_accounts %}
+              <option value="{{ account.id }}" data-callsign="{{ account.callsign or '' }}" data-name="{{ account.display_name or account.username }}">
+                {{ account.callsign|bracket_callsign if account.callsign else '[No callsign]' }} {{ account.display_name or account.username }}
+              </option>
+            {% endfor %}
+          </select>
+          {% if not cadet_accounts %}<small>No Admin Accounts currently use the Cadet role.</small>{% endif %}
+        </label>
+        <label>
+          <span>Badge Number</span>
+          <input name="badge_number" placeholder="Auto-filled from account callsign" data-cadet-account-callsign readonly required>
+        </label>
+        <label>
+          <span>Name</span>
+          <input name="name" placeholder="Auto-filled from account name" data-cadet-account-name readonly required>
+        </label>
+        <label>
+          <span>Discord</span>
+          <input name="discord" placeholder="discord_name">
+        </label>
+        <label>
+          <span>Region</span>
+          <input name="region" placeholder="NA / EU">
+        </label>
+        <label class="wide-field">
+          <span>Hire Date</span>
+          <input name="hire_date" placeholder="MM/DD/YYYY">
+        </label>
+        <button type="submit">Add Cadet</button>
+      </form>
+    </section>
+
+    <section class="panel tab-shell fto-main-tabs supervisor-panel boxed-section fto-box">
+      <input type="radio" name="fto-panel-tab" id="ftp-roster-tab" checked>
+      <input type="radio" name="fto-panel-tab" id="fto-active-tab">
+      <input type="radio" name="fto-panel-tab" id="fto-cadet-archive-tab">
+      <input type="radio" name="fto-panel-tab" id="fto-timestamps-tab">
+      <input type="radio" name="fto-panel-tab" id="fto-training-results-tab">
+      {% if can_review_ftp_applications %}<input type="radio" name="fto-panel-tab" id="ftp-applications-tab">{% endif %}
+      <div class="tab-buttons">
+        <label for="ftp-roster-tab">FTP Roster</label>
+        <label for="fto-active-tab">Active Cadets</label>
+        <label for="fto-cadet-archive-tab">Archived Cadets</label>
+        <label for="fto-timestamps-tab">Timestamp Logs</label>
+        <label for="fto-training-results-tab">Training Results</label>
+        {% if can_review_ftp_applications %}<label for="ftp-applications-tab">FTP Applications</label>{% endif %}
+      </div>
+
+      <section class="tab-panel ftp-roster-panel">
+        <section class="ert-roster-panel boxed-section">
+          <header>
+            <div><span>Field Training Program</span><h2>FTP Roster</h2><p>{% if ftp_roster_is_live %}Synced from the FTP roster sheet. Vacant positions are hidden.{% else %}Using FTP assignments from Admin Accounts while the roster sheet is unavailable.{% endif %}</p></div>
+            <div class="roster-panel-actions"><small class="roster-sync-status" data-roster-sync="{{ ftp_roster_sync.synced_at }}">Updated just now</small><small>{{ ftp_members|length }} member{% if ftp_members|length != 1 %}s{% endif %}</small><button class="roster-refresh-button" type="button" data-roster-refresh="ftp" aria-label="Refresh FTP roster" title="Refresh FTP roster"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0 2 5M20 4v7h-7"/></svg></button></div>
+          </header>
+          <div class="ert-member-grid">
+            {% for member in ftp_members %}
+              <article class="ert-member-card{% if (member.badge or member.name)|lower in ftp_roster_sync.changed_keys %} roster-member-changed{% endif %}"><div><strong>{{ member.name }}</strong><span>{{ member.badge|bracket_callsign if member.badge else 'No badge number' }}</span><small>{{ member.status }}{% if member.timezone %} · {{ member.timezone }}{% endif %}</small></div><b>{{ member.role }}</b></article>
+            {% else %}
+              <article class="workspace-empty"><strong>No active FTP members listed</strong><span>Active, non-vacant members from the FTP sheet will appear here.</span></article>
+            {% endfor %}
+          </div>
+        </section>
+      </section>
+
+      <section class="tab-panel fto-active-panel">
+        <div class="doc-cadet-list-head">
+          <div>
+            <h2>Cadets</h2>
+            <p>Click a cadet row to open their DOC checklist.</p>
+          </div>
+          <span>{{ cadets|length }} result(s)</span>
+        </div>
+        <div class="doc-cadet-list">
+          {% for cadet in cadets %}
+            {% set logs = cadet_logs_by_id.get(cadet.id, []) %}
+            <article class="doc-cadet-row">
+              <button class="doc-cadet-identity" type="button" data-cadet-toggle="{{ cadet.id }}" aria-expanded="false">
+                <strong>{{ cadet.badge_number|bracket_callsign }}</strong>
+                <span>CID {{ cadet.discord or cadet.id }}</span>
+                <b>{{ cadet.name }}</b>
+              </button>
+              <div class="doc-cadet-actions">
+                <label class="doc-phase-picker" title="Current training phase">
+                  <span>Phase</span>
+                  <select name="phase" form="progress-{{ cadet.id }}">
+                    {% for phase_name in ['Onboarding', 'Phase 1', 'Phase 2', 'Solo'] %}
+                      <option value="{{ phase_name }}" {% if cadet.phase == phase_name %}selected{% endif %}>{{ phase_name }}</option>
+                    {% endfor %}
+                  </select>
+                </label>
+                <a class="doc-icon-button" href="#cadet-notes-{{ cadet.id }}" title="Cadet notes" aria-label="Cadet notes">
+                  <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M7 3h8l4 4v14H7z"></path><path d="M15 3v5h4"></path><path d="M10 13h6M10 17h6"></path></svg>
+                </a>
+                <a class="doc-icon-button" href="#cadet-time-{{ cadet.id }}" title="Cadet timestamps" aria-label="Cadet timestamps">
+                  <svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"></circle><path d="M12 8v5l3 2"></path></svg>
+                </a>
+                <a class="doc-icon-button" href="#cadet-ops-{{ cadet.id }}" title="Cadet operations" aria-label="Cadet operations">
+                  <svg aria-hidden="true" viewBox="0 0 24 24"><rect x="7" y="3" width="10" height="18" rx="2"></rect><path d="M9 7h6M9 11h6M9 15h4"></path></svg>
+                </a>
+                {% if can_archive_cadets %}
+                  <form method="post" action="{{ url_for('archive_cadet', cadet_id=cadet.id) }}">
+                    <button class="doc-icon-button" type="submit" title="Archive cadet" aria-label="Archive cadet">
+                      <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M6 7h12v13H6z"></path><path d="M4 4h16v3H4zM10 11h4"></path></svg>
+                    </button>
+                  </form>
+                {% endif %}
+              </div>
+            </article>
+            <div class="doc-cadet-dropdown" data-cadet-dropdown="{{ cadet.id }}" hidden>
+              <form id="progress-{{ cadet.id }}" method="post" action="{{ url_for('update_cadet_progress', cadet_id=cadet.id) }}" class="doc-checklist-form doc-phase-checklist">
+                <div class="phase-checklist-head">
+                  <div>
+                    <span>Training Progress</span>
+                    <h3>Phase Checklist</h3>
+                    <p>Mark completed requirements, adjust the phase above, then save everything together.</p>
+                  </div>
+                  <div class="phase-checklist-progress">
+                    <div><strong data-checklist-completed>0</strong><span>of <b data-checklist-total>0</b> complete</span></div>
+                    <div class="phase-progress-track" aria-hidden="true"><i data-checklist-progress></i></div>
+                  </div>
+                </div>
+                <div class="doc-check-grid">
+                  <section class="phase-check-card">
+                    <header><span>01</span><div><h4>Onboarding</h4><p>Initial department setup</p></div></header>
+                    <label class="progress-check"><input type="checkbox" name="onboarding_interview" {% if cadet.onboarding_interview %}checked{% endif %}><span>Interview</span></label>
+                    <label class="progress-check"><input type="checkbox" name="onboarding_setup" {% if cadet.onboarding_setup %}checked{% endif %}><span>Setup</span></label>
+                    <label class="progress-check"><input type="checkbox" name="onboarding_academy" {% if cadet.onboarding_academy %}checked{% endif %}><span>Academy</span></label>
+                  </section>
+                  <section class="phase-check-card">
+                    <header><span>02</span><div><h4>Phase 1</h4><p>Required training hours</p></div></header>
+                    <label class="progress-check"><input type="checkbox" name="phase1_step_1" {% if cadet.phase1_step_1 %}checked{% endif %}><span>Hour 1</span></label>
+                    <label class="progress-check"><input type="checkbox" name="phase1_step_2" {% if cadet.phase1_step_2 %}checked{% endif %}><span>Hour 2</span></label>
+                    <label class="progress-check"><input type="checkbox" name="phase1_step_3" {% if cadet.phase1_step_3 %}checked{% endif %}><span>Hour 3</span></label>
+                    <label class="progress-check"><input type="checkbox" name="phase1_step_4" {% if cadet.phase1_step_4 %}checked{% endif %}><span>Hour 4</span></label>
+                    <label class="progress-check"><input type="checkbox" name="phase1_deescalation_training" {% if cadet.phase1_deescalation_training %}checked{% endif %}><span>De-escalation Training</span></label>
+                    <label class="progress-check"><input type="checkbox" name="phase1_tactical_training" {% if cadet.phase1_tactical_training %}checked{% endif %}><span>Tactical Training</span></label>
+                  </section>
+                  <section class="phase-check-card">
+                    <header><span>03</span><div><h4>Phase 2</h4><p>Practical field requirements</p></div></header>
+                    <label class="progress-check"><input type="checkbox" name="phase2_prison_transport_1" {% if cadet.phase2_prison_transport_1 %}checked{% endif %}><span>Prison Transport 1</span></label>
+                    <label class="progress-check"><input type="checkbox" name="phase2_prison_transport_2" {% if cadet.phase2_prison_transport_2 %}checked{% endif %}><span>Prison Transport 2</span></label>
+                    <label class="progress-check"><input type="checkbox" name="phase2_prison_transport_3" {% if cadet.phase2_prison_transport_3 %}checked{% endif %}><span>Prison Transport 3</span></label>
+                    <label class="progress-check"><input type="checkbox" name="phase2_incident_report_1" {% if cadet.phase2_incident_report_1 %}checked{% endif %}><span>Incident Report 1</span></label>
+                    <label class="progress-check"><input type="checkbox" name="phase2_incident_report_2" {% if cadet.phase2_incident_report_2 %}checked{% endif %}><span>Incident Report 2</span></label>
+                    <label class="progress-check"><input type="checkbox" name="phase2_riot" {% if cadet.phase2_riot %}checked{% endif %}><span>Riot</span></label>
+                    <label class="progress-check"><input type="checkbox" name="phase2_visitation" {% if cadet.phase2_visitation %}checked{% endif %}><span>Visitation</span></label>
+                  </section>
+                  <section class="phase-check-card phase-check-solo">
+                    <header><span>04</span><div><h4>Solo</h4><p>Final authorization period</p></div></header>
+                    <label><span>Solo Phase Start</span><input name="solo_phase_start" value="{{ cadet.solo_phase_start or '' }}" placeholder="MM/DD/YYYY"></label>
+                    <label><span>Solo Phase End</span><input name="solo_phase_end" value="{{ cadet.solo_phase_end or '' }}" placeholder="MM/DD/YYYY"></label>
+                    <label class="progress-check"><input type="checkbox" name="final_exam_authorized" {% if cadet.final_exam_authorized %}checked{% endif %}><span>Authorised for Final Exam</span></label>
+                  </section>
+                </div>
+                <footer class="phase-checklist-footer">
+                  <span>Changes are saved together for this cadet.</span>
+                  <button class="button secondary small-button" type="submit">Save Changes</button>
+                </footer>
+              </form>
+            </div>
+          {% else %}
+            <article class="question-card">
+              <h2>No active cadets yet.</h2>
+              <p>Add the first cadet above.</p>
+            </article>
+          {% endfor %}
+        </div>
+
+        {% for cadet in cadets %}
+          {% set logs = cadet_logs_by_id.get(cadet.id, []) %}
+          {% set timestamps = cadet_timestamps_by_id.get(cadet.id, []) %}
+          {% set active_timestamp = namespace(item=none) %}
+          {% for item in timestamps %}
+            {% if not item.stop_utc and active_timestamp.item is none %}
+              {% set active_timestamp.item = item %}
+            {% endif %}
+          {% endfor %}
+          <div class="doc-modal" id="cadet-notes-{{ cadet.id }}">
+            <a class="doc-modal-backdrop" href="#fto-active-tab" aria-label="Close"></a>
+            <section class="doc-modal-card doc-notes-modal" role="dialog" aria-labelledby="cadet-notes-title-{{ cadet.id }}">
+              <header>
+                <h2 id="cadet-notes-title-{{ cadet.id }}">Cadet Notes - {{ cadet.badge_number|bracket_callsign }} - {{ cadet.name }}</h2>
+                <a href="#fto-active-tab" aria-label="Close">x</a>
+              </header>
+              <form method="post" action="{{ url_for('add_cadet_note', cadet_id=cadet.id) }}" class="doc-note-compose">
+                <textarea name="note" rows="3" placeholder="Write a note..." required></textarea>
+                <button type="submit">Add</button>
+              </form>
+              <div class="doc-note-list">
+                {% for log in logs %}
+                  <article>
+                    <h3>{{ log.officer_badge|bracket_callsign }} {{ log.training_officer }}</h3>
+                    <time>{{ log.created_at }}</time>
+                    <p><b>{{ log.activities }}</b></p>
+                    <p>{{ log.notes }}</p>
+                  </article>
+                {% else %}
+                  <p class="muted-note">No notes yet.</p>
+                {% endfor %}
+              </div>
+            </section>
+          </div>
+
+          <div class="doc-modal" id="cadet-time-{{ cadet.id }}">
+            <a class="doc-modal-backdrop" href="#fto-active-tab" aria-label="Close"></a>
+            <section class="doc-modal-card doc-time-modal" role="dialog" aria-labelledby="cadet-time-title-{{ cadet.id }}" data-cadet-time-modal>
+              <header>
+                <h2 id="cadet-time-title-{{ cadet.id }}">Cadet Timestamps - {{ cadet.badge_number|bracket_callsign }} - {{ cadet.name }}</h2>
+                <a href="#fto-active-tab" aria-label="Close">x</a>
+              </header>
+              <div class="doc-session-bar">
+                <div>
+                  <strong>Active Session</strong>
+                  <span>
+                    {% if active_timestamp.item %}
+                      {{ active_timestamp.item.fto_name }} started <time data-local-time="{{ active_timestamp.item.start_utc }}">{{ active_timestamp.item.start_utc }}</time>
+                    {% else %}
+                      None running
+                    {% endif %}
+                  </span>
+                </div>
+                <div class="doc-session-actions">
+                  <form method="post" action="{{ url_for('start_managed_cadet_timestamp', cadet_id=cadet.id) }}" data-managed-timestamp-start>
+                    <input type="hidden" name="start_timezone" data-managed-start-timezone>
+                    <input type="hidden" name="fto_name" data-selected-fto required>
+                    <button class="button secondary small-button" type="submit" data-start-button {% if active_timestamp.item %}disabled{% endif %}>Start</button>
+                  </form>
+                  <form method="post" action="{{ url_for('stop_managed_cadet_timestamp', cadet_id=cadet.id) }}" data-managed-timestamp-stop>
+                    <input type="hidden" name="stop_timezone" data-managed-stop-timezone>
+                    <button class="button secondary small-button" type="submit" {% if not active_timestamp.item %}disabled{% endif %}>Stop</button>
+                  </form>
+                </div>
+              </div>
+              <div class="doc-time-grid">
+                <section class="doc-officer-picker" data-officer-picker>
+                  <h3>Officer Picker</h3>
+                  <input type="search" placeholder="Search officers..." data-officer-search>
+                  <p>Type to search.</p>
+                  <p>Selected: <span data-selected-count>0</span></p>
+                  <div class="doc-officer-list">
+                    {% for fto in fto_options %}
+                      <button type="button" data-fto-option="{{ fto }}">{{ fto }}</button>
+                    {% else %}
+                      <p class="muted-note">No FTOs have been added yet.</p>
+                    {% endfor %}
+                  </div>
+                </section>
+                <section>
+                  <h3>Recent Sessions</h3>
+                  <div class="doc-session-list">
+                    {% for item in timestamps %}
+                      <article>
+                        <div>
+                          <strong>{% if item.stop_utc %}Completed{% elif item.paused_utc %}Paused{% else %}Active{% endif %} - #{{ item.id }}</strong>
+                          <time>
+                            <span data-local-time="{{ item.start_utc }}">{{ item.start_utc }}</span>
+                            {% if item.stop_utc %} - <span data-local-time="{{ item.stop_utc }}">{{ item.stop_utc }}</span>{% endif %}
+                          </time>
+                        </div>
+                        <p>Officers: {{ item.fto_name }}</p>
+                        <small>
+                          Created by:
+                          {% if item.creator_name %}
+                            {{ item.creator_callsign|bracket_callsign }} {{ item.creator_name }}
+                          {% else %}
+                            {{ item.account_username or '-' }}
+                          {% endif %}
+                        </small>
+                      </article>
+                    {% else %}
+                      <p class="muted-note">No timestamp sessions found for this cadet.</p>
+                    {% endfor %}
+                  </div>
+                </section>
+              </div>
+            </section>
+          </div>
+
+          <div class="doc-modal" id="cadet-ops-{{ cadet.id }}">
+            <a class="doc-modal-backdrop" href="#fto-active-tab" aria-label="Close"></a>
+            <section class="doc-modal-card doc-ops-modal" role="dialog" aria-labelledby="cadet-ops-title-{{ cadet.id }}">
+              <header class="doc-ops-header">
+                <div>
+                  <span class="doc-ops-kicker">Field Training Record</span>
+                  <h2 id="cadet-ops-title-{{ cadet.id }}">{{ cadet.badge_number|bracket_callsign }} {{ cadet.name }}</h2>
+                </div>
+                <a href="#fto-active-tab" aria-label="Close">x</a>
+              </header>
+              <div class="doc-ops-layout">
+                <aside>
+                  <div class="doc-ops-side-head">
+                    <div>
+                      <span class="doc-ops-kicker">History</span>
+                      <h3>Past Operations</h3>
+                    </div>
+                    <span class="doc-ops-count">{{ logs|length }}</span>
+                  </div>
+                  <div class="doc-ops-list">
+                    {% for log in logs %}
+                      <button class="doc-ops-history-card" type="button" data-operation-view="{{ cadet.id }}-{{ log.id }}">
+                        <div class="doc-ops-history-top">
+                          <strong>Operation #{{ log.id }}</strong>
+                          <span class="doc-ops-status">{{ log.logger_status }}</span>
+                        </div>
+                        <p>{{ log.officer_badge|bracket_callsign }} {{ log.training_officer }}</p>
+                        <div class="doc-ops-history-times">
+                          <span><b>Start</b><span data-local-time="{{ log.training_started }}">{{ log.training_started }}</span></span>
+                          <span><b>End</b><span data-local-time="{{ log.training_ended }}">{{ log.training_ended }}</span></span>
+                        </div>
+                        <footer><time>Filed {{ log.created_at }}</time><span>View details &rarr;</span></footer>
+                      </button>
+                    {% else %}
+                      <div class="doc-ops-empty"><strong>No operations yet</strong><span>The first completed report will appear here.</span></div>
+                    {% endfor %}
+                  </div>
+                </aside>
+                <section class="doc-ops-main">
+                  {% for log in logs %}
+                    <article class="doc-ops-history-detail" data-operation-detail="{{ cadet.id }}-{{ log.id }}" hidden>
+                      <header>
+                        <div><span class="doc-ops-step">Completed Operation</span><h3>Operation #{{ log.id }}</h3><p>Full training record and trainer feedback.</p></div>
+                        <button class="button secondary small-button" type="button" data-operation-new>&larr; New Report</button>
+                      </header>
+                      <div class="doc-ops-detail-summary">
+                        <div><span>Training Officer</span><strong>{{ log.officer_badge|bracket_callsign }} {{ log.training_officer }}</strong></div>
+                        <div><span>Status</span><strong>{{ log.logger_status }}</strong></div>
+                        <div><span>Started</span><strong data-local-time="{{ log.training_started }}">{{ log.training_started }}</strong></div>
+                        <div><span>Ended</span><strong data-local-time="{{ log.training_ended }}">{{ log.training_ended }}</strong></div>
+                      </div>
+                      <section class="doc-ops-detail-copy"><span>Activities Completed</span><p>{{ log.activities }}</p></section>
+                      <section class="doc-ops-detail-copy trainer-notes"><span>Trainer Notes</span><p>{{ log.notes }}</p></section>
+                      <footer>Filed {{ log.created_at }}</footer>
+                    </article>
+                  {% endfor %}
+                  <form method="post" action="{{ url_for('add_cadet_log', cadet_id=cadet.id) }}" class="doc-operation-form">
+                    <input type="hidden" name="return_to" value="fto_panel">
+                    <div class="doc-modal-title-row">
+                      <div>
+                        <span class="doc-ops-step">New Report</span>
+                        <h3>Log Cadet Operation</h3>
+                        <p>Select a completed timestamp, verify the session, then add the training details.</p>
+                      </div>
+                    </div>
+                    <section class="doc-ops-form-section doc-ops-session-section wide-field">
+                      <div class="doc-ops-section-heading"><span>1</span><div><h4>Choose Training Session</h4><p>Only completed timestamps for this cadet are shown.</p></div></div>
+                      <label class="operation-timestamp-picker">
+                        <span>Completed timestamp</span>
+                        <select name="timestamp_id" data-operation-timestamp required>
+                          <option value="">Select a completed timestamp...</option>
+                          {% for item in timestamps if item.stop_utc %}
+                            <option value="{{ item.id }}" data-fto-name="{{ item.fto_name }}" data-start-utc="{{ item.start_utc }}" data-stop-utc="{{ item.stop_utc }}">
+                              Session #{{ item.id }} · {{ item.fto_name }} · {{ item.start_utc }}
+                            </option>
+                          {% endfor %}
+                        </select>
+                        {% if not timestamps|selectattr('stop_utc')|list %}<small>No completed timestamps are available for this cadet.</small>{% endif %}
+                      </label>
+                      <div class="doc-ops-session-summary" data-operation-summary>
+                        <div><span>Training Officer</span><strong data-operation-officer-display>Waiting for selection</strong></div>
+                        <div><span>Badge</span><strong data-operation-badge-display>—</strong></div>
+                        <div><span>Started</span><strong data-operation-start-display>—</strong></div>
+                        <div><span>Ended</span><strong data-operation-end-display>—</strong></div>
+                        <div class="doc-ops-duration"><span>Session Length</span><strong data-operation-duration>—</strong></div>
+                      </div>
+                    </section>
+                    <input name="training_officer" data-operation-officer readonly required type="hidden">
+                    <input name="officer_badge" data-operation-badge readonly required type="hidden">
+                    <input class="local-datetime-input" name="training_started" type="hidden" data-operation-start readonly required>
+                    <input class="local-datetime-input" name="training_ended" type="hidden" data-operation-end readonly required>
+                    <input type="hidden" name="training_started_utc" data-utc-for="training_started">
+                    <input type="hidden" name="training_ended_utc" data-utc-for="training_ended">
+                    <input type="hidden" name="training_timezone" data-training-timezone>
+                    <section class="doc-ops-form-section doc-ops-report-section wide-field">
+                      <div class="doc-ops-section-heading"><span>2</span><div><h4>Document the Operation</h4><p>Record what was completed and any coaching notes.</p></div></div>
+                      <div class="doc-ops-writing-grid">
+                        <label><span>Activities completed</span><textarea name="activities" rows="6" placeholder="Example: Radio procedure, inmate transport, perimeter patrol..." required></textarea></label>
+                        <label><span>Training notes</span><textarea name="notes" rows="6" placeholder="Document performance, coaching provided, and follow-up items..." required></textarea></label>
+                      </div>
+                    </section>
+                    <footer class="doc-ops-form-footer wide-field">
+                      <label><span>Cadet logger status</span><select name="logger_status"><option>Updated</option><option>Not Updated</option></select></label>
+                      <div><a class="button secondary" href="#fto-active-tab">Cancel</a><button class="button" type="submit">Save Operation</button></div>
+                    </footer>
+                  </form>
+                </section>
+              </div>
+            </section>
+          </div>
+
+        {% endfor %}
+      </section>
+
+      <section class="tab-panel fto-cadet-archive-panel">
+        <div class="doc-cadet-list-head">
+          <div>
+            <h2>Archived Cadets</h2>
+            <p>Review inactive cadets, open their history, or restore them to the active roster.</p>
+          </div>
+          <span>{{ archived_cadets|length }} result(s)</span>
+        </div>
+        <div class="doc-cadet-list archived-cadet-list">
+          {% for cadet in archived_cadets %}
+            <article class="doc-cadet-row archived-cadet-row">
+              <button class="doc-cadet-identity" type="button" data-cadet-toggle="archived-{{ cadet.id }}" aria-expanded="false">
+                <strong>{{ cadet.badge_number|bracket_callsign }}</strong>
+                <span>{{ cadet.phase }} · {{ cadet.log_count }} log(s)</span>
+                <b>{{ cadet.name }}</b>
+              </button>
+              <div class="doc-cadet-actions">
+                <a class="doc-icon-button" href="#archived-cadet-ops-{{ cadet.id }}" title="Cadet operations" aria-label="Cadet operations">
+                  <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M7 3h8l4 4v14H7z"></path><path d="M15 3v5h4"></path><path d="M10 13h6M10 17h6"></path></svg>
+                </a>
+                <form method="post" action="{{ url_for('restore_cadet', cadet_id=cadet.id) }}">
+                  <button class="doc-icon-button archived-cadet-restore" type="submit" title="Restore cadet" aria-label="Restore cadet">
+                    <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M7 8H3V4"></path><path d="M4 8a8 8 0 1 1 1 9"></path></svg>
+                  </button>
+                </form>
+              </div>
+            </article>
+            <div class="doc-cadet-dropdown archived-cadet-dropdown" data-cadet-dropdown="archived-{{ cadet.id }}" hidden>
+              <section class="doc-checklist-form doc-phase-checklist is-readonly" aria-label="Archived phase checklist">
+                <div class="phase-checklist-head">
+                  <div><span>Archived Training Record</span><h3>Phase Checklist</h3><p>This saved checklist is read-only while the cadet remains archived.</p></div>
+                  <div class="phase-checklist-progress"><div><strong data-checklist-completed>0</strong><span>of <b data-checklist-total>0</b> complete</span></div><div class="phase-progress-track" aria-hidden="true"><i data-checklist-progress></i></div></div>
+                </div>
+                <div class="doc-check-grid">
+                  <section class="phase-check-card">
+                    <header><span>01</span><div><h4>Onboarding</h4><p>Initial department setup</p></div></header>
+                    <label class="progress-check"><input type="checkbox" disabled {% if cadet.onboarding_interview %}checked{% endif %}><span>Interview</span></label>
+                    <label class="progress-check"><input type="checkbox" disabled {% if cadet.onboarding_setup %}checked{% endif %}><span>Setup</span></label>
+                    <label class="progress-check"><input type="checkbox" disabled {% if cadet.onboarding_academy %}checked{% endif %}><span>Academy</span></label>
+                  </section>
+                  <section class="phase-check-card">
+                    <header><span>02</span><div><h4>Phase 1</h4><p>Required training hours</p></div></header>
+                    <label class="progress-check"><input type="checkbox" disabled {% if cadet.phase1_step_1 %}checked{% endif %}><span>Hour 1</span></label>
+                    <label class="progress-check"><input type="checkbox" disabled {% if cadet.phase1_step_2 %}checked{% endif %}><span>Hour 2</span></label>
+                    <label class="progress-check"><input type="checkbox" disabled {% if cadet.phase1_step_3 %}checked{% endif %}><span>Hour 3</span></label>
+                    <label class="progress-check"><input type="checkbox" disabled {% if cadet.phase1_step_4 %}checked{% endif %}><span>Hour 4</span></label>
+                    <label class="progress-check"><input type="checkbox" disabled {% if cadet.phase1_deescalation_training %}checked{% endif %}><span>De-escalation Training</span></label>
+                    <label class="progress-check"><input type="checkbox" disabled {% if cadet.phase1_tactical_training %}checked{% endif %}><span>Tactical Training</span></label>
+                  </section>
+                  <section class="phase-check-card">
+                    <header><span>03</span><div><h4>Phase 2</h4><p>Practical field requirements</p></div></header>
+                    <label class="progress-check"><input type="checkbox" disabled {% if cadet.phase2_prison_transport_1 %}checked{% endif %}><span>Prison Transport 1</span></label>
+                    <label class="progress-check"><input type="checkbox" disabled {% if cadet.phase2_prison_transport_2 %}checked{% endif %}><span>Prison Transport 2</span></label>
+                    <label class="progress-check"><input type="checkbox" disabled {% if cadet.phase2_prison_transport_3 %}checked{% endif %}><span>Prison Transport 3</span></label>
+                    <label class="progress-check"><input type="checkbox" disabled {% if cadet.phase2_incident_report_1 %}checked{% endif %}><span>Incident Report 1</span></label>
+                    <label class="progress-check"><input type="checkbox" disabled {% if cadet.phase2_incident_report_2 %}checked{% endif %}><span>Incident Report 2</span></label>
+                    <label class="progress-check"><input type="checkbox" disabled {% if cadet.phase2_riot %}checked{% endif %}><span>Riot</span></label>
+                    <label class="progress-check"><input type="checkbox" disabled {% if cadet.phase2_visitation %}checked{% endif %}><span>Visitation</span></label>
+                  </section>
+                  <section class="phase-check-card phase-check-solo">
+                    <header><span>04</span><div><h4>Solo</h4><p>Final authorization period</p></div></header>
+                    <label><span>Solo Phase Start</span><input disabled value="{{ cadet.solo_phase_start or '' }}" placeholder="Not recorded"></label>
+                    <label><span>Solo Phase End</span><input disabled value="{{ cadet.solo_phase_end or '' }}" placeholder="Not recorded"></label>
+                    <label class="progress-check"><input type="checkbox" disabled {% if cadet.final_exam_authorized %}checked{% endif %}><span>Authorised for Final Exam</span></label>
+                  </section>
+                </div>
+                <footer class="phase-checklist-footer archived-checklist-footer"><span>Restore this cadet to make changes to their training record.</span><a class="button secondary small-button" href="#archived-cadet-ops-{{ cadet.id }}">View Operation History</a></footer>
+              </section>
+            </div>
+            <div class="doc-modal" id="archived-cadet-ops-{{ cadet.id }}">
+              <a class="doc-modal-backdrop" href="#fto-cadet-archive-tab" aria-label="Close"></a>
+              <section class="doc-modal-card doc-ops-modal doc-archived-ops-modal" role="dialog" aria-labelledby="archived-cadet-ops-title-{{ cadet.id }}">
+                <header class="doc-ops-header">
+                  <div><span class="doc-ops-kicker">Archived Field Training Record</span><h2 id="archived-cadet-ops-title-{{ cadet.id }}">{{ cadet.badge_number|bracket_callsign }} {{ cadet.name }}</h2></div>
+                  <a href="#fto-cadet-archive-tab" aria-label="Close">x</a>
+                </header>
+                <section class="doc-archived-ops-content">
+                  <div class="doc-modal-title-row"><div><span class="doc-ops-step">Operation History</span><h3>{{ cadet.log_count }} Completed Report{% if cadet.log_count != 1 %}s{% endif %}</h3><p>Read-only history for this archived cadet.</p></div></div>
+                  <div class="doc-archived-ops-grid">
+                    {% for log in archived_logs_by_id.get(cadet.id, []) %}
+                      <article>
+                        <div class="doc-ops-history-top"><strong>Operation #{{ log.id }}</strong><span class="doc-ops-status">{{ log.logger_status }}</span></div>
+                        <h4>{{ log.officer_badge|bracket_callsign }} {{ log.training_officer }}</h4>
+                        <div class="doc-ops-history-times"><span><b>Start</b><span data-local-time="{{ log.training_started }}">{{ log.training_started }}</span></span><span><b>End</b><span data-local-time="{{ log.training_ended }}">{{ log.training_ended }}</span></span></div>
+                        <div class="doc-archived-ops-notes"><p><b>Activities</b>{{ log.activities }}</p><p><b>Notes</b>{{ log.notes }}</p></div>
+                        <time>Filed {{ log.created_at }}</time>
+                      </article>
+                    {% else %}
+                      <div class="doc-ops-empty"><strong>No operations recorded</strong><span>This archived cadet has no operation reports.</span></div>
+                    {% endfor %}
+                  </div>
+                </section>
+              </section>
+            </div>
+          {% else %}
+            <article class="question-card">
+              <h2>No archived cadets yet.</h2>
+              <p>Cadets you archive from the active list will show here.</p>
+            </article>
+          {% endfor %}
+        </div>
+      </section>
+
+      <section class="tab-panel fto-timestamps-panel">
+        <div class="timestamp-log-heading">
+          <div>
+            <h2>Timestamp Logs</h2>
+            <p>Review cadet sessions, assigned officers, status, and recorded time.</p>
+          </div>
+          <span>{{ cadet_timestamps|length }} session(s)</span>
+        </div>
+        <div class="table-wrap timestamp-log-wrap">
+          <table class="timestamp-log-table">
+            <thead>
+              <tr>
+                <th>Cadet</th>
+                <th>Officer</th>
+                <th>Session</th>
+                <th>Status</th>
+                <th>Duration</th>
+              </tr>
+            </thead>
+            <tbody id="fto-timestamp-body" data-live-url="{{ url_for('live_fto_timestamps') }}">
+              {% for item in cadet_timestamps %}
+                <tr>
+                  <td class="timestamp-person-cell">
+                    <strong>{{ item.cadet_callsign|bracket_callsign }} {{ item.cadet_name }}</strong>
+                    <small>Account {{ item.account_username or '-' }}</small>
+                  </td>
+                  <td class="timestamp-officer-cell">{{ item.fto_name }}</td>
+                  <td class="timestamp-session-cell">
+                    <span><b>Start</b><time data-local-time="{{ item.start_utc }}">{{ item.start_utc }}</time></span>
+                    <span><b>End</b>{% if item.stop_utc %}<time data-local-time="{{ item.stop_utc }}">{{ item.stop_utc }}</time>{% else %}—{% endif %}</span>
+                  </td>
+                  <td><span class="timestamp-status {% if item.stop_utc %}completed{% elif item.paused_utc %}paused{% else %}active{% endif %}">{% if item.stop_utc %}Completed{% elif item.paused_utc %}Paused{% else %}Active{% endif %}</span></td>
+                  <td class="timestamp-duration" data-duration data-start="{{ item.start_utc }}" data-stop="{{ item.stop_utc or '' }}" data-paused-total="{{ item.paused_total_seconds or 0 }}" data-paused-at="{{ item.paused_utc or '' }}">-</td>
+                </tr>
+              {% else %}
+                <tr data-empty-row><td colspan="5">No cadet timestamps yet.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      {% include "_training_results.html" %}
+      {% if can_review_ftp_applications %}
+        {% set queue_applications = ftp_applications %}{% set queue_short = 'FTP' %}{% set queue_title = 'Field Training Program' %}
+        {% include "_division_application_queue.html" %}
+      {% endif %}
+    </section>
+  </main>
+  <script>
+    const ftoTimestampBody = document.querySelector("#fto-timestamp-body");
+    const browserTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+    const ftoTabIds = ["ftp-roster-tab", "fto-active-tab", "fto-cadet-archive-tab", "fto-timestamps-tab", "fto-training-results-tab", "ftp-applications-tab"];
+
+    document.querySelectorAll(".doc-phase-checklist").forEach((checklist) => {
+      const checks = [...checklist.querySelectorAll('input[type="checkbox"]')];
+      const completed = checklist.querySelector("[data-checklist-completed]");
+      const total = checklist.querySelector("[data-checklist-total]");
+      const progress = checklist.querySelector("[data-checklist-progress]");
+      function updateChecklistProgress() {
+        const completedCount = checks.filter((check) => check.checked).length;
+        if (completed) completed.textContent = completedCount;
+        if (total) total.textContent = checks.length;
+        if (progress) progress.style.width = `${checks.length ? (completedCount / checks.length) * 100 : 0}%`;
+      }
+      checks.forEach((check) => check.addEventListener("change", updateChecklistProgress));
+      updateChecklistProgress();
+    });
+
+    document.querySelectorAll("[data-add-cadet-form]").forEach((form) => {
+      const picker = form.querySelector("[data-cadet-account-picker]");
+      const callsignInput = form.querySelector("[data-cadet-account-callsign]");
+      const nameInput = form.querySelector("[data-cadet-account-name]");
+
+      function fillCadetIdentity() {
+        const selected = picker?.selectedOptions[0];
+        if (callsignInput) callsignInput.value = selected?.dataset.callsign || "";
+        if (nameInput) nameInput.value = selected?.dataset.name || "";
+      }
+
+      picker?.addEventListener("change", fillCadetIdentity);
+      fillCadetIdentity();
+    });
+
+    function setFtoTab(tabId, replace = false) {
+      if (!ftoTabIds.includes(tabId)) return;
+      const tab = document.getElementById(tabId);
+      if (!tab) return;
+      tab.checked = true;
+      const nextUrl = `${window.location.pathname}${window.location.search}#${tabId}`;
+      if (replace) {
+        window.history.replaceState(null, "", nextUrl);
+      } else {
+        window.history.pushState(null, "", nextUrl);
+      }
+    }
+
+    const initialFtoTab = window.location.hash.slice(1);
+    if (ftoTabIds.includes(initialFtoTab)) {
+      setFtoTab(initialFtoTab, true);
+    }
+
+    for (const tabId of ftoTabIds) {
+      document.querySelector(`label[for="${tabId}"]`)?.addEventListener("click", () => {
+        setFtoTab(tabId);
+      });
+    }
+
+    document.addEventListener("click", (event) => {
+      const toggle = event.target.closest("[data-cadet-toggle]");
+      if (!toggle) return;
+      const cadetId = toggle.dataset.cadetToggle;
+      const dropdown = document.querySelector(`[data-cadet-dropdown="${cadetId}"]`);
+      if (!dropdown) return;
+      const shouldOpen = dropdown.hidden;
+      document.querySelectorAll("[data-cadet-dropdown]").forEach((panel) => {
+        panel.hidden = true;
+      });
+      document.querySelectorAll("[data-cadet-toggle]").forEach((button) => {
+        button.setAttribute("aria-expanded", "false");
+      });
+      dropdown.hidden = !shouldOpen;
+      document.querySelectorAll(`[data-cadet-toggle="${cadetId}"]`).forEach((button) => {
+        button.setAttribute("aria-expanded", String(shouldOpen));
+      });
+    });
+
+    function dateForInput(value) {
+      const date = value ? new Date(value) : new Date();
+      return Number.isNaN(date.getTime()) ? new Date() : date;
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "").replace(/[&<>"']/g, (char) => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;",
+      }[char]));
+    }
+
+    function formatLocalTime(value) {
+      const date = dateForInput(value);
+      return new Intl.DateTimeFormat(undefined, {
+        dateStyle: "medium",
+        timeStyle: "short",
+        timeZone: browserTimezone,
+      }).format(date);
+    }
+
+    document.querySelectorAll("[data-local-time]").forEach((node) => {
+      node.textContent = formatLocalTime(node.dataset.localTime);
+    });
+
+    document.querySelectorAll("[data-operation-view]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const modal = button.closest(".doc-ops-modal");
+        if (!modal) return;
+        modal.querySelectorAll("[data-operation-view]").forEach((item) => item.classList.toggle("is-active", item === button));
+        modal.querySelectorAll("[data-operation-detail]").forEach((detail) => {
+          detail.hidden = detail.dataset.operationDetail !== button.dataset.operationView;
+        });
+        const form = modal.querySelector(".doc-operation-form");
+        if (form) form.hidden = true;
+        const main = modal.querySelector(".doc-ops-main");
+        if (main) main.scrollTop = 0;
+      });
+    });
+
+    document.querySelectorAll("[data-operation-new]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const modal = button.closest(".doc-ops-modal");
+        if (!modal) return;
+        modal.querySelectorAll("[data-operation-detail]").forEach((detail) => detail.hidden = true);
+        modal.querySelectorAll("[data-operation-view]").forEach((item) => item.classList.remove("is-active"));
+        const form = modal.querySelector(".doc-operation-form");
+        if (form) form.hidden = false;
+      });
+    });
+
+    function durationText(startValue, stopValue, pausedTotalSeconds = 0, pausedAt = "") {
+      const start = dateForInput(startValue);
+      const stop = stopValue ? dateForInput(stopValue) : new Date();
+      let pausedMs = Number(pausedTotalSeconds || 0) * 1000;
+      if (pausedAt && !stopValue) {
+        pausedMs += Math.max(0, new Date() - dateForInput(pausedAt));
+      } else if (pausedAt && stopValue) {
+        pausedMs += Math.max(0, stop - dateForInput(pausedAt));
+      }
+      const minutes = Math.max(0, Math.round((stop - start - pausedMs) / 60000));
+      const hours = Math.floor(minutes / 60);
+      const remainder = minutes % 60;
+      if (hours && remainder) return `${hours}h ${remainder}m`;
+      if (hours) return `${hours}h`;
+      return `${remainder}m`;
+    }
+
+    document.querySelectorAll("[data-duration]").forEach((node) => {
+      node.textContent = durationText(node.dataset.start, node.dataset.stop, node.dataset.pausedTotal, node.dataset.pausedAt);
+    });
+
+    function localInputValue(date) {
+      const offset = date.getTimezoneOffset() * 60000;
+      return new Date(date.getTime() - offset).toISOString().slice(0, 16);
+    }
+
+    function utcFromLocalInput(value) {
+      return value ? new Date(value).toISOString() : "";
+    }
+
+    document.querySelectorAll(".doc-operation-form").forEach((form) => {
+      const timestampPicker = form.querySelector("[data-operation-timestamp]");
+      const officerInput = form.querySelector("[data-operation-officer]");
+      const badgeInput = form.querySelector("[data-operation-badge]");
+      const startedInput = form.querySelector('input[name="training_started"]');
+      const endedInput = form.querySelector('input[name="training_ended"]');
+      const officerDisplay = form.querySelector("[data-operation-officer-display]");
+      const badgeDisplay = form.querySelector("[data-operation-badge-display]");
+      const startedDisplay = form.querySelector("[data-operation-start-display]");
+      const endedDisplay = form.querySelector("[data-operation-end-display]");
+      const durationDisplay = form.querySelector("[data-operation-duration]");
+
+      function fillOperationFromTimestamp() {
+        const selected = timestampPicker?.selectedOptions[0];
+        const ftoName = selected?.dataset.ftoName || "";
+        const identity = ftoName.match(/^\[([^\]]+)\]\s*(.+)$/);
+        if (officerInput) officerInput.value = identity ? identity[2].trim() : ftoName;
+        if (badgeInput) badgeInput.value = identity ? identity[1].trim() : "";
+        if (startedInput) startedInput.value = selected?.dataset.startUtc ? localInputValue(new Date(selected.dataset.startUtc)) : "";
+        if (endedInput) endedInput.value = selected?.dataset.stopUtc ? localInputValue(new Date(selected.dataset.stopUtc)) : "";
+        const startedDate = selected?.dataset.startUtc ? new Date(selected.dataset.startUtc) : null;
+        const endedDate = selected?.dataset.stopUtc ? new Date(selected.dataset.stopUtc) : null;
+        const displayOptions = { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" };
+        if (officerDisplay) officerDisplay.textContent = officerInput?.value || "Waiting for selection";
+        if (badgeDisplay) badgeDisplay.textContent = badgeInput?.value ? `[${badgeInput.value}]` : "—";
+        if (startedDisplay) startedDisplay.textContent = startedDate ? startedDate.toLocaleString([], displayOptions) : "—";
+        if (endedDisplay) endedDisplay.textContent = endedDate ? endedDate.toLocaleString([], displayOptions) : "—";
+        if (durationDisplay) {
+          const durationMinutes = startedDate && endedDate ? Math.max(0, Math.round((endedDate - startedDate) / 60000)) : null;
+          durationDisplay.textContent = durationMinutes === null ? "—" : durationMinutes >= 60 ? `${Math.floor(durationMinutes / 60)}h ${durationMinutes % 60}m` : `${durationMinutes}m`;
+        }
+      }
+
+      timestampPicker?.addEventListener("change", fillOperationFromTimestamp);
+      fillOperationFromTimestamp();
+      form.addEventListener("submit", () => {
+        form.querySelectorAll("[data-utc-for]").forEach((hidden) => {
+          const source = form.elements[hidden.dataset.utcFor];
+          hidden.value = source ? utcFromLocalInput(source.value) : "";
+        });
+        const timezone = form.querySelector("[data-training-timezone]");
+        if (timezone) timezone.value = browserTimezone;
+      });
+    });
+
+    const reminderTimestampId = new URLSearchParams(window.location.search).get("timestamp_reminder");
+    if (reminderTimestampId) {
+      const reminderOption = [...document.querySelectorAll("[data-operation-timestamp] option")]
+        .find((option) => option.value === reminderTimestampId);
+      if (reminderOption) {
+        const form = reminderOption.closest("form");
+        const picker = form?.querySelector("[data-operation-timestamp]");
+        const modal = form?.closest(".doc-modal");
+        if (picker && modal) {
+          picker.value = reminderTimestampId;
+          picker.dispatchEvent(new Event("change", { bubbles: true }));
+          window.location.hash = modal.id;
+          window.setTimeout(() => form.querySelector('textarea[name="activities"]')?.focus(), 80);
+        }
+      }
+    }
+
+    document.querySelectorAll("[data-managed-timestamp-start]").forEach((form) => {
+      form.addEventListener("submit", (event) => {
+        const timezone = form.querySelector("[data-managed-start-timezone]");
+        if (timezone) timezone.value = browserTimezone;
+        const selectedFto = form.querySelector("[data-selected-fto]");
+        if (selectedFto && !selectedFto.value) {
+          event.preventDefault();
+          const modal = form.closest("[data-cadet-time-modal]");
+          modal?.querySelector("[data-officer-search]")?.focus();
+        }
+      });
+    });
+
+    document.querySelectorAll("[data-managed-timestamp-stop]").forEach((form) => {
+      form.addEventListener("submit", () => {
+        const timezone = form.querySelector("[data-managed-stop-timezone]");
+        if (timezone) timezone.value = browserTimezone;
+      });
+    });
+
+    document.querySelectorAll("[data-cadet-time-modal]").forEach((modal) => {
+      const search = modal.querySelector("[data-officer-search]");
+      const options = Array.from(modal.querySelectorAll("[data-fto-option]"));
+      const selectedInput = modal.querySelector("[data-selected-fto]");
+      const selectedCount = modal.querySelector("[data-selected-count]");
+      const startButton = modal.querySelector("[data-start-button]");
+      const startLocked = Boolean(startButton?.disabled);
+
+      function setSelected(option) {
+        options.forEach((item) => item.classList.toggle("is-selected", item === option));
+        if (selectedInput) selectedInput.value = option?.dataset.ftoOption || "";
+        if (selectedCount) selectedCount.textContent = option ? "1" : "0";
+        if (startButton && !startLocked) {
+          startButton.disabled = !option;
+        }
+      }
+
+      function filterOptions() {
+        const query = (search?.value || "").trim().toLowerCase();
+        options.forEach((option) => {
+          const matches = query && option.textContent.toLowerCase().includes(query);
+          option.hidden = !matches;
+        });
+      }
+
+      setSelected(null);
+      filterOptions();
+      search?.addEventListener("input", filterOptions);
+      options.forEach((option) => {
+        option.addEventListener("click", () => {
+          setSelected(option);
+          if (search) search.value = option.dataset.ftoOption || option.textContent.trim();
+          filterOptions();
+        });
+      });
+    });
+
+    function timestampRow(item) {
+      const status = item.stop_utc ? "Completed" : item.is_paused ? "Paused" : "Active";
+      const statusClass = status.toLowerCase();
+      const stopped = item.stop_utc ? formatLocalTime(item.stop_utc) : "&mdash;";
+      return `
+        <tr>
+          <td class="timestamp-person-cell">
+            <strong>${escapeHtml(item.cadet_callsign)} ${escapeHtml(item.cadet_name)}</strong>
+            <small>Account ${escapeHtml(item.account_username || "-")}</small>
+          </td>
+          <td class="timestamp-officer-cell">${escapeHtml(item.fto_name)}</td>
+          <td class="timestamp-session-cell">
+            <span><b>Start</b>${escapeHtml(formatLocalTime(item.start_utc))}</span>
+            <span><b>End</b>${stopped}</span>
+          </td>
+          <td><span class="timestamp-status ${statusClass}">${status}</span></td>
+          <td class="timestamp-duration">${escapeHtml(durationText(item.start_utc, item.stop_utc || "", item.paused_total_seconds || 0, item.paused_utc || ""))}</td>
+        </tr>
+      `;
+    }
+
+    async function refreshFtoTimestamps() {
+      if (!ftoTimestampBody) return;
+      const response = await fetch(ftoTimestampBody.dataset.liveUrl, { headers: { Accept: "application/json" } });
+      if (!response.ok) return;
+      const data = await response.json();
+      ftoTimestampBody.innerHTML = data.timestamps.length
+        ? data.timestamps.map(timestampRow).join("")
+        : '<tr data-empty-row><td colspan="5">No cadet timestamps yet.</td></tr>';
+    }
+
+    const trainingResultSearch = document.querySelector("[data-training-result-search]");
+    const trainingResultFilter = document.querySelector("[data-training-result-filter]");
+    function filterTrainingResults() {
+      const query = (trainingResultSearch?.value || "").trim().toLowerCase();
+      const status = trainingResultFilter?.value || "all";
+      document.querySelectorAll("[data-training-result-card]").forEach((card) => {
+        card.hidden = !((!query || card.dataset.search.includes(query)) && (status === "all" || card.dataset.status === status));
+      });
+    }
+    trainingResultSearch?.addEventListener("input", filterTrainingResults);
+    trainingResultFilter?.addEventListener("change", filterTrainingResults);
+    document.querySelector("[data-training-result-clear]")?.addEventListener("click", () => {
+      if (trainingResultSearch) trainingResultSearch.value = "";
+      if (trainingResultFilter) trainingResultFilter.value = "all";
+      filterTrainingResults();
+    });
+
+    refreshFtoTimestamps();
+    setInterval(() => { if (!document.hidden) refreshFtoTimestamps(); }, 5000);
+    document.querySelector("[data-roster-refresh]")?.addEventListener("click", async (event) => {
+      const button = event.currentTarget;
+      button.disabled = true;
+      try { await fetch("{{ url_for('refresh_live_roster', roster_name='ftp') }}", { method: "POST" }); window.location.reload(); }
+      catch (error) { button.disabled = false; }
+    });
+    document.querySelectorAll("[data-roster-sync]").forEach((item) => {
+      const syncedAt = Number(item.dataset.rosterSync || 0) * 1000;
+      if (!syncedAt) { item.textContent = "Awaiting sync"; return; }
+      const minutes = Math.max(0, Math.floor((Date.now() - syncedAt) / 60000));
+      item.textContent = minutes < 1 ? "Updated just now" : `Updated ${minutes} min ago`;
+    });
+  </script>
+</body>
+</html>

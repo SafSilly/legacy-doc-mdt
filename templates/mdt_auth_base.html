@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}DOC · MDT Login{% endblock %}</title>
+<link rel="icon" href="{{ url_for('static', filename='bolingbroke-logo.png') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='mdt-auth.css') }}">
+<script defer src="{{ url_for('static', filename='mdt-auth.js') }}"></script>
+</head><body class="terminal-auth"><main class="terminal-auth-shell">
+<p class="terminal-auth-brand"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 4 7v6c0 4 8 8 8 8s8-4 8-8V7z"/></svg> DOC Mobile Data Terminal</p>
+<section class="terminal-auth-card">
+<header class="terminal-auth-heading"><div class="terminal-auth-seal"><img src="{{ url_for('static', filename='bolingbroke-logo.png') }}" alt="DOC seal"></div><div><h1>{% block heading %}MDT Login{% endblock %}</h1><p>San Andreas DOC · Authentication</p></div></header>
+{% for category, message in get_flashed_messages(with_categories=true) %}<p class="flash {{ category }}" role="alert">{{ message }}</p>{% endfor %}
+{% block content %}{% endblock %}
+<p class="terminal-auth-notice">Authorized personnel only. Access is monitored.</p>
+</section><footer class="terminal-auth-footer">© 2026 DOC MDT System</footer>
+</main></body></html>

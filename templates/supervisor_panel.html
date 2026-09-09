@@ -1,0 +1,699 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Supervisor Panel</title>
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='bolingbroke-logo.png') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  <script defer src="{{ url_for('static', filename='live-actions.js') }}"></script>
+</head>
+<body class="{% if request.args.get('embed') %}embedded-panel-body{% endif %}">
+  <main class="shell">
+    <nav class="top-actions">
+      {% include "_back_button.html" %}
+      <a class="button secondary" href="{{ url_for('quiz_home') }}">Quiz Site</a>
+      <a class="button secondary" href="{{ url_for('hub') }}">Hub</a>
+      <form method="post" action="{{ url_for('supervisor_logout') }}">
+        <button class="button secondary" type="submit">Log Out</button>
+      </form>
+    </nav>
+
+    <header class="hero">
+      <div class="brand-block">
+        <img class="site-logo" src="{{ url_for('static', filename='bolingbroke-logo.png') }}" alt="Bolingbroke State Penitentiary logo">
+        <div>
+          <p class="eyebrow">Supervisor Access</p>
+          <h1>Supervisor Panel</h1>
+          <p class="lede">Signed in as {{ current_user.display_name or current_user.username }}. Review certification requests, exam attempts, and training results.</p>
+        </div>
+      </div>
+{% if not embedded %}      <div class="score-card">
+        <span>{{ current_user.role|title }}</span>
+        <strong>{{ submissions|length }}</strong>
+        <small>exam attempts</small>
+      </div>{% endif %}
+    </header>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <section class="flash-stack">
+          {% for category, message in messages %}
+            <div class="flash {{ category }}">{{ message }}</div>
+          {% endfor %}
+        </section>
+      {% endif %}
+    {% endwith %}
+
+    <section class="panel tab-shell supervisor-tabs">
+      <input type="radio" name="supervisor-tab" id="overview-tab" checked>
+      <input type="radio" name="supervisor-tab" id="attempts-tab">
+      <input type="radio" name="supervisor-tab" id="requests-tab">
+      <input type="radio" name="supervisor-tab" id="timestamps-tab">
+      <input type="radio" name="supervisor-tab" id="timestamp-followups-tab">
+      <input type="radio" name="supervisor-tab" id="fto-evaluations-tab">
+      <div class="tab-buttons">
+        <label for="overview-tab">Exam Info</label>
+        <label for="attempts-tab">Exam Attempts</label>
+        <label for="requests-tab">Test Requests</label>
+        <label for="timestamps-tab">Cadet Timestamps</label>
+        <label for="timestamp-followups-tab">FTP Follow-ups</label>
+        <label for="fto-evaluations-tab">FTP Evaluation Forms</label>
+      </div>
+
+      <section class="tab-panel overview-panel">
+        <section class="overview-section exam-info-workspace">
+          <header class="supervisor-workspace-head">
+            <div><p class="eyebrow">Certification Library</p><h2>Exam Information</h2><span>Compare requirements and question composition for each supervisor-approved exam.</span></div>
+            <div class="workspace-stat"><strong>{{ rows|length }}</strong><span>active exams</span></div>
+          </header>
+          <div class="exam-info-grid">
+            {% for row in rows %}
+              {% set choice_percent = (row.multiple_choice_count / row.question_count * 100)|round|int if row.question_count else 0 %}
+              <article class="exam-info-card difficulty-{{ row.difficulty|lower }}">
+                <header><div><span>Certification Exam {{ "%02d"|format(loop.index) }}</span><h3>{{ row.title }}</h3></div><b>{{ row.difficulty }}</b></header>
+                <div class="exam-info-primary">
+                  <div class="exam-pass-ring" style="--pass-score: {{ row.passing_score or 0 }}"><strong>{% if row.passing_score %}{{ row.passing_score }}%{% else %}—{% endif %}</strong><span>required</span></div>
+                  <div><span>Total Questions</span><strong>{{ row.question_count }}</strong><small>Questions are selected from the current DOC question bank.</small></div>
+                </div>
+                <section class="exam-composition">
+                  <div><span>Question Composition</span><strong>{{ choice_percent }}% multiple choice</strong></div>
+                  <div class="exam-composition-track"><i style="width: {{ choice_percent }}%"></i></div>
+                  <div class="exam-composition-counts"><span><b>{{ row.multiple_choice_count }}</b> Multiple Choice</span><span><b>{{ row.written_count }}</b> Written Review</span></div>
+                </section>
+                <footer><span>Supervisor approval required</span><a class="button secondary small-button" href="{{ url_for('quiz_home') }}">Open Exams</a></footer>
+              </article>
+            {% else %}
+              <article class="workspace-empty"><strong>No certification exams configured</strong><span>Configured exams will appear here.</span></article>
+            {% endfor %}
+          </div>
+        </section>
+      </section>
+
+      <section class="tab-panel attempts-panel overview-section">
+        <header class="supervisor-workspace-head">
+          <div><p class="eyebrow">Exam Oversight</p><h2>Exam Attempts</h2><span>Review Corrections Officer and Solo Patrol certification outcomes.</span></div>
+          <div class="workspace-stat"><strong>{{ submissions|length }}</strong><span>attempts</span></div>
+        </header>
+        <div class="supervisor-workspace-tools">
+          <label><span>Search attempts</span><input type="search" placeholder="Name, callsign, or exam..." data-attempt-search></label>
+          <label><span>Outcome</span><select data-attempt-status><option value="all">All outcomes</option><option value="passed">Passed</option><option value="failed">Failed</option></select></label>
+          <button class="button secondary small-button" type="button" data-attempt-clear>Clear</button>
+        </div>
+        <div class="attempt-card-grid" data-attempt-list>
+          {% for attempt in submissions %}
+            <article class="attempt-review-card {{ 'passed' if attempt.passed else 'failed' }}" data-attempt-card data-status="{{ 'passed' if attempt.passed else 'failed' }}" data-search="{{ (attempt.trainee_name ~ ' ' ~ attempt.callsign ~ ' ' ~ attempt.quiz_title)|lower }}">
+              <header>
+                <div><span>Submission #{{ attempt.id }}</span><h3>{{ attempt.callsign|bracket_callsign }} {{ attempt.trainee_name }}</h3><small>{{ attempt.quiz_title }}</small></div>
+                <span class="attempt-outcome {{ 'passed' if attempt.passed else 'failed' }}">{{ 'Passed' if attempt.passed else 'Failed' }}</span>
+              </header>
+              <div class="attempt-score-layout">
+                <div class="attempt-score-ring" style="--score: {{ attempt.score }}"><strong>{{ attempt.score }}%</strong><span>score</span></div>
+                <div class="attempt-metrics"><div><span>Correct</span><strong>{{ attempt.correct_count }} / {{ attempt.total_count }}</strong></div><div><span>Required</span><strong>{{ attempt.passing_score or 0 }}%</strong></div><div><span>Submitted</span><strong><time data-local-time="{{ attempt.created_at }}">{{ attempt.created_at }}</time></strong></div></div>
+              </div>
+              <footer>
+                <a class="button small-button" href="{{ url_for('supervisor_submission_detail', submission_id=attempt.id, embed=1 if request.args.get('embed') else none) }}">Review Attempt</a>
+                <form method="post" action="{{ url_for('delete_submission', submission_id=attempt.id) }}" data-confirm="Delete this exam attempt permanently?"><button class="button danger small-button" type="submit">Delete</button></form>
+              </footer>
+            </article>
+          {% else %}
+            <article class="workspace-empty"><strong>No exam attempts yet</strong><span>Completed exams will appear here for review.</span></article>
+          {% endfor %}
+        </div>
+      </section>
+
+      <section class="tab-panel requests-panel overview-section">
+        <header class="supervisor-workspace-head request-workspace-head">
+          <div><p class="eyebrow">Approval Queue</p><h2>Test Requests</h2><span>Approve certification access before requests expire.</span></div>
+          <div class="workspace-stat pending"><strong data-request-count>{{ test_requests|length }}</strong><span>pending</span></div>
+        </header>
+        <div class="request-queue-banner"><span class="request-live-dot"></span><div><strong>Live approval queue</strong><small>New requests and countdowns update automatically.</small></div></div>
+        <div class="request-card-list" id="test-request-body" data-live-url="{{ url_for('live_test_requests') }}">
+          {% for request in test_requests %}
+            {% set request_data = request_payload(request) %}
+            <article class="test-request-card" data-request-id="{{ request.id }}">
+              <header><div><span>Request #{{ request.id }}</span><h3>{{ request.callsign|bracket_callsign }} {{ request.trainee_name }}</h3><small>{{ request.quiz_title }}</small></div><span class="request-status-badge">Pending</span></header>
+              <div class="request-detail-grid"><div><span>Requested</span><strong><time data-local-time="{{ request.created_at }}">{{ request.created_at }}</time></strong></div><div class="request-expiry"><span>Time remaining</span><strong>{{ request_data.expires_label }}</strong></div></div>
+              <footer><span>Supervisor decision required</span><div><form method="post" action="{{ url_for('review_test_request', request_id=request.id, decision='deny') }}" data-live-request-action><button class="button secondary small-button" type="submit">Deny</button></form><form method="post" action="{{ url_for('review_test_request', request_id=request.id, decision='accept') }}" data-live-request-action><button class="small-button" type="submit">Approve Exam</button></form></div></footer>
+            </article>
+          {% else %}
+            <article class="workspace-empty" data-empty-row><strong>Approval queue is clear</strong><span>New exam requests will appear here automatically.</span></article>
+          {% endfor %}
+        </div>
+      </section>
+
+      <section class="tab-panel timestamps-panel overview-section">
+        <div class="supervisor-timestamp-heading">
+          <div><h2>Cadet Timestamps</h2><p>Monitor active sessions, correct recorded time, or edit completed start and stop dates.</p></div>
+          <span>{{ cadet_timestamps|length }} session(s)</span>
+        </div>
+        <div class="supervisor-timestamp-tools">
+          <label><span>Search sessions</span><input type="search" placeholder="Cadet, callsign, account, or FTO..." data-timestamp-search></label>
+          <label><span>Status</span><select data-timestamp-status-filter><option value="all">All statuses</option><option value="active">Active</option><option value="paused">Paused</option><option value="stopped">Stopped</option></select></label>
+          <button class="button secondary small-button" type="button" data-timestamp-clear>Clear</button>
+        </div>
+        <div class="supervisor-timestamp-grid" id="supervisor-timestamp-body" data-live-url="{{ url_for('live_supervisor_timestamps') }}">
+          <article class="timestamp-dashboard-empty"><strong>Loading timestamp sessions...</strong></article>
+        </div>
+      </section>
+
+      <section class="tab-panel timestamp-followups-panel overview-section">
+        <header class="supervisor-workspace-head timestamp-followups-head">
+          <div><p class="eyebrow">Operation Follow-up</p><h2>FTP Timestamp Follow-ups</h2><span>Confirm every completed FTP timestamp has a matching cadet operation report.</span></div>
+          <div class="workspace-stat"><strong>{{ ftp_timestamp_followups|selectattr('can_remind')|list|length }}</strong><span>need reports</span></div>
+        </header>
+        <div class="timestamp-followup-list">
+          {% for item in ftp_timestamp_followups %}
+            {% set timestamp = item.timestamp %}
+            <article class="timestamp-followup-card {{ 'complete' if item.operation else ('needs-action' if item.can_remind else 'open') }}">
+              <header>
+                <div><span>Timestamp #{{ timestamp.id }}</span><h3>{{ timestamp.cadet_callsign|bracket_callsign }} {{ timestamp.cadet_name or 'Unknown cadet' }}</h3><small>Assigned FTP member: {{ item.assignee_name }}</small></div>
+                {% if item.operation %}<b class="timestamp-operation-status complete">Operation logged</b>{% elif item.can_remind %}<b class="timestamp-operation-status missing">Report needed</b>{% else %}<b class="timestamp-operation-status open">Session still open</b>{% endif %}
+              </header>
+              <div class="timestamp-followup-details">
+                <div><span>Session started</span><strong><time data-local-time="{{ timestamp.start_utc }}">{{ timestamp.start_utc }}</time></strong></div>
+                <div><span>Session ended</span><strong>{% if timestamp.stop_utc %}<time data-local-time="{{ timestamp.stop_utc }}">{{ timestamp.stop_utc }}</time>{% else %}Still running{% endif %}</strong></div>
+                <div><span>Recorded by</span><strong>{{ timestamp.creator_callsign|bracket_callsign }} {{ timestamp.creator_name or timestamp.account_username or 'System' }}</strong></div>
+              </div>
+              {% if item.operation %}
+                <details class="timestamp-operation-detail"><summary>View linked operation report</summary><div><span>{{ item.operation.logger_status }} · Filed {{ item.operation.created_at }}</span><h4>{{ item.operation.activities }}</h4><p>{{ item.operation.notes }}</p></div></details>
+              {% elif item.can_remind %}
+                <footer><span>This completed timestamp has no linked operation report.</span><form method="post" action="{{ url_for('send_timestamp_operation_reminder', timestamp_id=timestamp.id) }}"><button class="button small-button" type="submit">Send operation reminder</button></form></footer>
+              {% else %}
+                <footer><span>The operation report becomes required once this timestamp is ended.</span></footer>
+              {% endif %}
+            </article>
+          {% else %}
+            <article class="workspace-empty"><strong>No FTP timestamps found</strong><span>Completed FTP sessions will appear here with their operation status.</span></article>
+          {% endfor %}
+        </div>
+      </section>
+
+      <section class="tab-panel fto-evaluations-panel overview-section">
+        <header class="supervisor-workspace-head evaluation-workspace-head">
+          <div><p class="eyebrow">Training Quality</p><h2>FTP Evaluations</h2><span>Review confidential cadet feedback and trainer performance ratings.</span></div>
+          <div class="workspace-stat"><strong>{{ fto_evaluations|length }}</strong><span>responses</span></div>
+        </header>
+        <div class="evaluation-toolbar">
+          <label><span>Search evaluations</span><input type="search" placeholder="Cadet, callsign, or FTO..." data-evaluation-search></label>
+          <button class="button secondary small-button" type="button" data-evaluation-clear>Clear</button>
+        </div>
+        <div class="evaluation-card-list">
+          {% for evaluation in fto_evaluations %}
+            <details class="evaluation-review-card" data-evaluation-card data-search="{{ (evaluation.cadet_callsign ~ ' ' ~ evaluation.cadet_name ~ ' ' ~ evaluation.fto_name)|lower }}">
+              <summary>
+                <div class="evaluation-identity"><span>Cadet Feedback #{{ evaluation.id }}</span><h3>{{ evaluation.cadet_callsign|bracket_callsign }} {{ evaluation.cadet_name }}</h3><small>Evaluating {{ evaluation.fto_name }}</small></div>
+                <div class="evaluation-summary-score"><strong>{{ ((evaluation.teaching_rating + evaluation.helpful_rating + (evaluation.overall_rating or 0)) / (3 if evaluation.overall_rating else 2))|round(1) }}</strong><span>average / 10</span></div>
+                <div class="evaluation-summary-meta"><time data-local-time="{{ evaluation.created_at }}">{{ evaluation.created_at }}</time><span>Open review <b>⌄</b></span></div>
+              </summary>
+              <div class="evaluation-review-body">
+                <section class="evaluation-rating-grid">
+                  <article><div><span>Teaching Ability</span><strong>{{ evaluation.teaching_rating }}/10</strong></div><div class="evaluation-rating-track"><i style="width: {{ evaluation.teaching_rating * 10 }}%"></i></div><small>Trainer's ability to explain and teach.</small></article>
+                  <article><div><span>Session Helpfulness</span><strong>{{ evaluation.helpful_rating }}/10</strong></div><div class="evaluation-rating-track"><i style="width: {{ evaluation.helpful_rating * 10 }}%"></i></div><small>How useful the cadet found this session.</small></article>
+                  <article><div><span>Overall Training</span><strong>{% if evaluation.overall_rating %}{{ evaluation.overall_rating }}/10{% else %}Not rated{% endif %}</strong></div><div class="evaluation-rating-track"><i style="width: {{ (evaluation.overall_rating or 0) * 10 }}%"></i></div><small>Department training experience to date.</small></article>
+                </section>
+                <section class="evaluation-feedback-block">
+                  <div><span>Written Feedback</span><small>Submitted by {{ evaluation.cadet_callsign|bracket_callsign }} {{ evaluation.cadet_name }}</small></div>
+                  <p>{{ evaluation.feedback or 'No additional written feedback was provided.' }}</p>
+                </section>
+              </div>
+            </details>
+          {% else %}
+            <article class="workspace-empty"><strong>No FTP evaluations yet</strong><span>Cadet feedback submissions will appear here automatically.</span></article>
+          {% endfor %}
+        </div>
+      </section>
+      {% if false %}{# Training Results now lives in the FTP Panel. #}
+      <section class="tab-panel training-results-panel overview-section">
+        <header class="supervisor-workspace-head training-results-heading">
+          <div><p class="eyebrow">Knowledge Review</p><h2>Training Results</h2><span>Review Full SOP and 10-Codes quizzes alongside focused Employee Hub training sessions.</span></div>
+          <div class="workspace-stat"><strong>{{ training_results|length + training_quiz_results|length }}</strong><span>results</span></div>
+        </header>
+        <div class="training-results-toolbar">
+          <label><span>Search results</span><input type="search" placeholder="Employee, callsign, or training topic..." data-training-result-search></label>
+          <label><span>Completion</span><select data-training-result-filter><option value="all">All results</option><option value="complete">Fully answered</option><option value="incomplete">Skipped questions</option></select></label>
+          <button class="button secondary small-button" type="button" data-training-result-clear>Clear</button>
+        </div>
+        <div class="training-result-list">
+          {% if training_quiz_results %}
+            <div class="training-result-group-heading"><div><span>Complete Practice Banks</span><h3>Training Quiz Results</h3></div><b>{{ training_quiz_results|length }} result{% if training_quiz_results|length != 1 %}s{% endif %}</b></div>
+          {% endif %}
+          {% for result in training_quiz_results %}
+            <details class="training-result-card training-quiz-result-card" data-training-result-card data-status="{{ 'incomplete' if result.skipped_count else 'complete' }}" data-search="{{ (result.callsign ~ ' ' ~ result.trainee_name ~ ' ' ~ result.quiz_title)|lower }}">
+              <summary>
+                <div class="training-result-identity"><span>Quiz Result #{{ result.id }}</span><h3>{% if result.callsign %}{{ result.callsign|bracket_callsign }} {% endif %}{{ result.trainee_name }}</h3><small>{{ result.quiz_title }}</small></div>
+                <div class="training-result-score"><strong>{{ result.score }}%</strong><span>{{ result.correct_count }}/{{ result.total_count }} graded correct</span></div>
+                <div class="training-result-review-meta"><div><b>{{ result.answered_count }}</b><span>answered</span></div><div><b>{{ result.skipped_count }}</b><span>skipped</span></div><time data-local-time="{{ result.created_at }}">{{ result.created_at }}</time><em>Review <i>&#8964;</i></em></div>
+              </summary>
+              <div class="training-result-detail-head"><div><span>Quiz Response Review</span><strong>{{ result.quiz_title }}</strong></div><p>{{ result.answered_count }} answered out of {{ result.responses|length }} saved questions.</p></div>
+              <div class="training-result-responses">
+                {% for response in result.responses %}
+                  <article class="{{ 'written' if response.review_only else ('correct' if response.is_correct else 'incorrect') }}">
+                    <div><span>Question {{ response.number or loop.index }}</span><b>{{ 'Written Response' if response.review_only else 'Multiple Choice' }}</b><em class="{% if response.review_only %}written{% elif response.is_correct %}correct{% else %}incorrect{% endif %}">{% if response.review_only %}Written{% elif response.is_correct %}Correct{% else %}Incorrect{% endif %}</em></div>
+                    <h3>{{ response.prompt }}</h3>
+                    <div class="training-response-answer"><span>Submitted response</span><p>{{ response.selected or 'No response submitted.' }}</p></div>
+                    <div class="training-response-answer expected"><span>Expected answer</span><p>{{ response.answer }}</p></div>
+                  </article>
+                {% else %}
+                  <p class="muted-note">This older quiz result does not contain question-level response data.</p>
+                {% endfor %}
+              </div>
+            </details>
+          {% endfor %}
+          {% if training_results %}
+            <div class="training-result-group-heading focused"><div><span>Focused Subjects</span><h3>Topic Training Results</h3></div><b>{{ training_results|length }} result{% if training_results|length != 1 %}s{% endif %}</b></div>
+          {% endif %}
+          {% for result in training_results %}
+            {% set graded_percent = ((result.correct_count / result.multiple_choice_total * 100)|round|int) if result.multiple_choice_total else 0 %}
+            <details class="training-result-card" data-training-result-card data-status="{{ 'incomplete' if result.skipped_count else 'complete' }}" data-search="{{ (result.callsign ~ ' ' ~ result.trainee_name ~ ' ' ~ result.category_title)|lower }}">
+              <summary>
+                <div class="training-result-identity"><span>Training Result #{{ result.id }}</span><h3>{% if result.callsign %}{{ result.callsign|bracket_callsign }} {% endif %}{{ result.trainee_name }}</h3><small>{{ result.category_title }}</small></div>
+                <div class="training-result-score"><strong>{{ graded_percent }}%</strong><span>{{ result.correct_count }}/{{ result.multiple_choice_total }} graded correct</span></div>
+                <div class="training-result-review-meta"><div><b>{{ result.answered_count }}</b><span>answered</span></div><div><b>{{ result.skipped_count }}</b><span>skipped</span></div><time data-local-time="{{ result.created_at }}">{{ result.created_at }}</time><em>Review <i>⌄</i></em></div>
+                <div><strong>{% if result.callsign %}{{ result.callsign|bracket_callsign }} {% endif %}{{ result.trainee_name }}</strong><span>{{ result.category_title }} · {{ result.created_at }}</span></div>
+                <div class="training-result-metrics"><b>{{ result.correct_count }}/{{ result.multiple_choice_total }} correct</b><span>{{ result.answered_count }} answered · {{ result.skipped_count }} skipped</span></div>
+              </summary>
+              <div class="training-result-detail-head"><div><span>Response Review</span><strong>{{ result.category_title }}</strong></div><p>{{ result.answered_count }} answered out of {{ result.responses|length }} questions.</p></div>
+              <div class="training-result-responses">
+                {% for response in result.responses %}
+                  <article class="{{ 'skipped' if response.skipped else ('correct' if response.type == 'multiple_choice' and response.correct else ('incorrect' if response.type == 'multiple_choice' else 'written')) }}">
+                    <div><span>Question {{ loop.index }}</span><b>{{ response.type|replace('_', ' ')|title }}</b>{% if response.skipped %}<em>Skipped</em>{% elif response.type == 'multiple_choice' %}<em class="{{ 'correct' if response.correct else 'incorrect' }}">{{ 'Correct' if response.correct else 'Incorrect' }}</em>{% endif %}</div>
+                    <h3>{{ response.prompt }}</h3>
+                    <div class="training-response-answer"><span>Submitted response</span><p>{{ response.response or 'No response submitted.' }}</p></div>
+                  </article>
+                {% else %}
+                  <p class="muted-note">No question details were saved for this result.</p>
+                {% endfor %}
+              </div>
+            </details>
+          {% else %}
+            {% if not training_quiz_results %}<article class="workspace-empty"><strong>No training results yet</strong><span>Completed training quizzes and focused Employee Hub sessions will appear here.</span></article>{% endif %}
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
+    </section>
+  </main>
+  <script>
+    const supervisorTabIds = ["overview-tab", "attempts-tab", "requests-tab", "timestamps-tab", "timestamp-followups-tab", "fto-evaluations-tab"];
+    const requestBody = document.querySelector("#test-request-body");
+    const supervisorTimestampBody = document.querySelector("#supervisor-timestamp-body");
+    let supervisorTimestampSignature = "";
+    const browserTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+
+    function setSupervisorTab(tabId, replace = false) {
+      if (!supervisorTabIds.includes(tabId)) return;
+      const tab = document.getElementById(tabId);
+      if (!tab) return;
+      tab.checked = true;
+      const nextUrl = `${window.location.pathname}${window.location.search}#${tabId}`;
+      if (replace) {
+        window.history.replaceState(null, "", nextUrl);
+      } else {
+        window.history.pushState(null, "", nextUrl);
+      }
+    }
+
+    const initialSupervisorTab = window.location.hash.slice(1);
+    if (supervisorTabIds.includes(initialSupervisorTab)) {
+      setSupervisorTab(initialSupervisorTab, true);
+    }
+
+    for (const tabId of supervisorTabIds) {
+      document.querySelector(`label[for="${tabId}"]`)?.addEventListener("click", () => {
+        setSupervisorTab(tabId);
+      });
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "").replace(/[&<>"']/g, (char) => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;",
+      }[char]));
+    }
+
+    function requestRow(request) {
+      return `
+        <article class="test-request-card" data-request-id="${request.id}">
+          <header><div><span>Request #${request.id}</span><h3>${escapeHtml(request.callsign)} ${escapeHtml(request.trainee_name)}</h3><small>${escapeHtml(request.quiz_title)}</small></div><span class="request-status-badge">Pending</span></header>
+          <div class="request-detail-grid"><div><span>Requested</span><strong>${escapeHtml(formatLocalTime(request.created_at))}</strong></div><div class="request-expiry"><span>Time remaining</span><strong>${escapeHtml(request.expires_label || "")}</strong></div></div>
+          <footer><span>Supervisor decision required</span><div><form method="post" action="/supervisor/requests/${request.id}/deny" data-live-request-action><button class="button secondary small-button" type="submit">Deny</button></form><form method="post" action="/supervisor/requests/${request.id}/accept" data-live-request-action><button class="small-button" type="submit">Approve Exam</button></form></div></footer>
+        </article>
+      `;
+    }
+
+    function dateForInput(value) {
+      const date = value ? new Date(value) : new Date();
+      return Number.isNaN(date.getTime()) ? new Date() : date;
+    }
+
+    function localInputValue(value) {
+      if (!value) return "";
+      const date = dateForInput(value);
+      const offset = date.getTimezoneOffset() * 60000;
+      return new Date(date.getTime() - offset).toISOString().slice(0, 16);
+    }
+
+    function utcFromLocalInput(value) {
+      return value ? new Date(value).toISOString() : "";
+    }
+
+    function formatLocalTime(value) {
+      const date = dateForInput(value);
+      return new Intl.DateTimeFormat(undefined, {
+        dateStyle: "medium",
+        timeStyle: "short",
+        timeZone: browserTimezone,
+      }).format(date);
+    }
+
+    function durationText(startValue, stopValue, pausedTotalSeconds = 0, pausedAt = "") {
+      const start = dateForInput(startValue);
+      const stop = stopValue ? dateForInput(stopValue) : new Date();
+      let pausedMs = Number(pausedTotalSeconds || 0) * 1000;
+      if (pausedAt && !stopValue) {
+        pausedMs += Math.max(0, new Date() - dateForInput(pausedAt));
+      } else if (pausedAt && stopValue) {
+        pausedMs += Math.max(0, stop - dateForInput(pausedAt));
+      }
+      const minutes = Math.max(0, Math.round((stop - start - pausedMs) / 60000));
+      const hours = Math.floor(minutes / 60);
+      const remainder = minutes % 60;
+      if (hours && remainder) return `${hours}h ${remainder}m`;
+      if (hours) return `${hours}h`;
+      return `${remainder}m`;
+    }
+
+    function timestampStatus(item) {
+      if (item.stop_utc) return "Stopped";
+      if (item.is_paused) return "Paused";
+      return "Active";
+    }
+
+    function timestampControl(item) {
+      if (item.stop_utc) return `${timestampDateEditor(item)}${timestampAdjuster(item)}`;
+      const action = item.is_paused ? `/supervisor/timestamps/${item.id}/resume` : `/supervisor/timestamps/${item.id}/pause`;
+      const label = item.is_paused ? "Resume" : "Pause";
+      const buttonClass = item.is_paused ? "small-button" : "button secondary small-button";
+      return `
+        <form method="post" action="${action}" data-timestamp-control>
+          <button class="${buttonClass}" type="submit">${label}</button>
+        </form>
+        <form method="post" action="/supervisor/timestamps/${item.id}/end" data-timestamp-end>
+          <input type="hidden" name="stop_utc" data-end-utc>
+          <input type="hidden" name="stop_timezone" data-end-timezone>
+          <button class="button danger small-button" type="submit">End</button>
+        </form>
+        ${timestampAdjuster(item)}
+      `;
+    }
+
+    function timestampAdjuster(item) {
+      return `
+        <details class="timestamp-manager">
+          <summary>Manage Time</summary>
+          <div class="timestamp-manager-popover" data-adjust-url="/supervisor/timestamps/${item.id}/adjust">
+            <div class="timestamp-manager-head"><div><strong>Adjust recorded total</strong><span>Add or remove minutes from this session.</span></div><button type="button" data-manager-close aria-label="Close">×</button></div>
+            <div class="timestamp-quick-adjustments">
+              <button type="button" data-time-adjust="-15">−15m</button>
+              <button type="button" data-time-adjust="-5">−5m</button>
+              <button type="button" data-time-adjust="5">+5m</button>
+              <button type="button" data-time-adjust="15">+15m</button>
+            </div>
+            <form data-custom-time-adjust>
+              <label><span>Custom minutes</span><input type="number" name="minutes" min="-1440" max="1440" step="1" placeholder="e.g. 30 or -10" required></label>
+              <button type="submit">Apply</button>
+            </form>
+            <small data-adjust-feedback>Positive adds time; negative removes time.</small>
+          </div>
+        </details>
+      `;
+    }
+
+    function timestampDateEditor(item) {
+      return `
+        <details class="timestamp-date-editor">
+          <summary>Edit Dates</summary>
+          <div class="timestamp-date-dialog">
+            <div class="timestamp-manager-head"><div><strong>Edit session dates</strong><span>Set the exact local start and end time.</span></div><button type="button" data-date-editor-close aria-label="Close">×</button></div>
+            ${timestampEdit(item)}
+            <small>Changes update the recorded session immediately.</small>
+          </div>
+        </details>
+      `;
+    }
+
+    function timestampEdit(item) {
+      return `
+        <form method="post" action="/supervisor/timestamps/${item.id}/edit" class="timestamp-edit-form" data-timestamp-edit>
+          <label><span>Start</span><input class="compact-datetime" type="datetime-local" name="start_time" data-edit-start="${escapeHtml(item.start_utc)}" required></label>
+          <label><span>End</span><input class="compact-datetime" type="datetime-local" name="stop_time" data-edit-stop="${escapeHtml(item.stop_utc || "")}" required></label>
+          <input type="hidden" name="start_utc" data-edit-start-utc>
+          <input type="hidden" name="stop_utc" data-edit-stop-utc>
+          <input type="hidden" name="start_timezone" data-edit-timezone>
+          <input type="hidden" name="stop_timezone" data-edit-timezone>
+          <button class="small-button" type="submit">Save Dates</button>
+        </form>
+      `;
+    }
+
+    function timestampRow(item) {
+      const stopped = item.stop_utc ? formatLocalTime(item.stop_utc) : "-";
+      const status = timestampStatus(item).toLowerCase();
+      const searchValue = `${item.cadet_callsign} ${item.cadet_name} ${item.account_username || ""} ${item.fto_name}`.toLowerCase();
+      return `
+        <article class="timestamp-session-card ${status}" data-timestamp-row data-status="${status}" data-search="${escapeHtml(searchValue)}">
+          <header>
+            <div class="timestamp-cadet-identity"><span>Cadet</span><h3>${escapeHtml(item.cadet_callsign)} ${escapeHtml(item.cadet_name || "Unknown cadet")}</h3><small>Account ${escapeHtml(item.account_username || "not linked")}</small></div>
+            <span class="timestamp-status-badge ${status}">${escapeHtml(timestampStatus(item))}</span>
+          </header>
+          <div class="timestamp-training-link"><span>Training with</span><strong>${escapeHtml(item.fto_name)}</strong></div>
+          <div class="timestamp-session-metrics">
+            <div class="primary"><span>Recorded time</span><strong>${escapeHtml(durationText(item.start_utc, item.stop_utc || "", item.paused_total_seconds || 0, item.paused_utc || ""))}</strong></div>
+            <div><span>Started</span><strong>${escapeHtml(formatLocalTime(item.start_utc))}</strong></div>
+            <div><span>${item.stop_utc ? "Stopped" : item.is_paused ? "Paused at" : "Current state"}</span><strong>${escapeHtml(item.stop_utc ? stopped : item.is_paused ? formatLocalTime(item.paused_utc) : "Running now")}</strong></div>
+          </div>
+          <footer><span>Session #${escapeHtml(item.id)}</span><div class="timestamp-actions-cell">${timestampControl(item)}</div></footer>
+        </article>
+      `;
+    }
+
+    function hydrateTimestampInputs(root = document) {
+      root.querySelectorAll("[data-edit-start]").forEach((input) => {
+        input.value = localInputValue(input.dataset.editStart);
+      });
+      root.querySelectorAll("[data-edit-stop]").forEach((input) => {
+        input.value = localInputValue(input.dataset.editStop);
+      });
+    }
+
+    const timestampSearch = document.querySelector("[data-timestamp-search]");
+    const timestampStatusFilter = document.querySelector("[data-timestamp-status-filter]");
+    function filterSupervisorTimestamps() {
+      const query = (timestampSearch?.value || "").trim().toLowerCase();
+      const status = timestampStatusFilter?.value || "all";
+      let visible = 0;
+      supervisorTimestampBody?.querySelectorAll("[data-timestamp-row]").forEach((card) => {
+        const matches = (!query || card.dataset.search.includes(query)) && (status === "all" || card.dataset.status === status);
+        card.hidden = !matches;
+        if (matches) visible += 1;
+      });
+      const count = document.querySelector(".supervisor-timestamp-heading > span");
+      if (count) count.textContent = `${visible} session(s)`;
+    }
+    timestampSearch?.addEventListener("input", filterSupervisorTimestamps);
+    timestampStatusFilter?.addEventListener("change", filterSupervisorTimestamps);
+    document.querySelector("[data-timestamp-clear]")?.addEventListener("click", () => {
+      if (timestampSearch) timestampSearch.value = "";
+      if (timestampStatusFilter) timestampStatusFilter.value = "all";
+      filterSupervisorTimestamps();
+    });
+
+    document.querySelectorAll("[data-local-time]").forEach((node) => {
+      node.textContent = formatLocalTime(node.dataset.localTime);
+    });
+
+    document.querySelectorAll("[data-duration]").forEach((node) => {
+      node.textContent = durationText(node.dataset.start, node.dataset.stop, node.dataset.pausedTotal, node.dataset.pausedAt);
+    });
+    hydrateTimestampInputs();
+
+    const attemptSearch = document.querySelector("[data-attempt-search]");
+    const attemptStatus = document.querySelector("[data-attempt-status]");
+    function filterAttempts() {
+      const query = (attemptSearch?.value || "").trim().toLowerCase();
+      const status = attemptStatus?.value || "all";
+      document.querySelectorAll("[data-attempt-card]").forEach((card) => {
+        card.hidden = !((!query || card.dataset.search.includes(query)) && (status === "all" || card.dataset.status === status));
+      });
+    }
+    attemptSearch?.addEventListener("input", filterAttempts);
+    attemptStatus?.addEventListener("change", filterAttempts);
+    document.querySelector("[data-attempt-clear]")?.addEventListener("click", () => {
+      if (attemptSearch) attemptSearch.value = "";
+      if (attemptStatus) attemptStatus.value = "all";
+      filterAttempts();
+    });
+
+    const evaluationSearch = document.querySelector("[data-evaluation-search]");
+    function filterEvaluations() {
+      const query = (evaluationSearch?.value || "").trim().toLowerCase();
+      document.querySelectorAll("[data-evaluation-card]").forEach((card) => {
+        card.hidden = Boolean(query && !card.dataset.search.includes(query));
+      });
+    }
+    evaluationSearch?.addEventListener("input", filterEvaluations);
+    document.querySelector("[data-evaluation-clear]")?.addEventListener("click", () => {
+      if (evaluationSearch) evaluationSearch.value = "";
+      filterEvaluations();
+    });
+
+    const trainingResultSearch = document.querySelector("[data-training-result-search]");
+    const trainingResultFilter = document.querySelector("[data-training-result-filter]");
+    function filterTrainingResults() {
+      const query = (trainingResultSearch?.value || "").trim().toLowerCase();
+      const status = trainingResultFilter?.value || "all";
+      document.querySelectorAll("[data-training-result-card]").forEach((card) => {
+        card.hidden = !((!query || card.dataset.search.includes(query)) && (status === "all" || card.dataset.status === status));
+      });
+    }
+    trainingResultSearch?.addEventListener("input", filterTrainingResults);
+    trainingResultFilter?.addEventListener("change", filterTrainingResults);
+    document.querySelector("[data-training-result-clear]")?.addEventListener("click", () => {
+      if (trainingResultSearch) trainingResultSearch.value = "";
+      if (trainingResultFilter) trainingResultFilter.value = "all";
+      filterTrainingResults();
+    });
+
+    async function refreshRequests() {
+      if (!requestBody) return;
+      const response = await fetch(requestBody.dataset.liveUrl, { headers: { Accept: "application/json" } });
+      if (!response.ok) return;
+      const data = await response.json();
+      requestBody.innerHTML = data.requests.length
+        ? data.requests.map(requestRow).join("")
+        : '<article class="workspace-empty" data-empty-row><strong>Approval queue is clear</strong><span>New exam requests will appear here automatically.</span></article>';
+      const count = document.querySelector("[data-request-count]");
+      if (count) count.textContent = data.requests.length;
+    }
+
+    async function refreshSupervisorTimestamps() {
+      if (!supervisorTimestampBody) return;
+      if (supervisorTimestampBody.querySelector(".timestamp-manager[open], .timestamp-date-editor[open]") || supervisorTimestampBody.contains(document.activeElement)) return;
+      const response = await fetch(supervisorTimestampBody.dataset.liveUrl, { headers: { Accept: "application/json" } });
+      if (!response.ok) return;
+      const data = await response.json();
+      const nextSignature = JSON.stringify(data.timestamps);
+      if (nextSignature === supervisorTimestampSignature) return;
+      supervisorTimestampSignature = nextSignature;
+      supervisorTimestampBody.innerHTML = data.timestamps.length
+        ? data.timestamps.map(timestampRow).join("")
+        : '<article class="timestamp-dashboard-empty"><strong>No cadet timestamps yet.</strong><span>New sessions will appear here automatically.</span></article>';
+      hydrateTimestampInputs(supervisorTimestampBody);
+      filterSupervisorTimestamps();
+    }
+
+    document.addEventListener("submit", async (event) => {
+      const form = event.target.closest("[data-live-request-action]");
+      if (!form) return;
+      event.preventDefault();
+      const response = await fetch(form.action, { method: "POST", headers: { Accept: "application/json" } });
+      if (response.ok) {
+        form.closest("[data-request-id]")?.remove();
+        if (!requestBody.querySelector("[data-request-id]")) {
+            requestBody.innerHTML = '<article class="workspace-empty" data-empty-row><strong>Approval queue is clear</strong><span>New exam requests will appear here automatically.</span></article>';
+        }
+        refreshRequests();
+      }
+    });
+
+    document.addEventListener("submit", async (event) => {
+      const form = event.target.closest("[data-timestamp-control]");
+      if (!form) return;
+      event.preventDefault();
+      const response = await fetch(form.action, { method: "POST", headers: { Accept: "application/json" } });
+      if (!response.ok) return;
+      refreshSupervisorTimestamps();
+    });
+
+    async function applyTimeAdjustment(manager, minutes) {
+      const feedback = manager.querySelector("[data-adjust-feedback]");
+      const controls = manager.querySelectorAll("button, input");
+      controls.forEach((control) => control.disabled = true);
+      feedback.textContent = "Updating timestamp...";
+      feedback.className = "is-pending";
+      const formData = new FormData();
+      formData.set("minutes", String(minutes));
+      try {
+        const response = await fetch(manager.dataset.adjustUrl, { method: "POST", body: formData, headers: { Accept: "application/json" } });
+        const result = await response.json();
+        if (!response.ok || !result.ok) throw new Error(result.error || "Timestamp adjustment failed.");
+        feedback.textContent = `${Number(minutes) > 0 ? "+" : ""}${minutes} minutes applied.`;
+        feedback.className = "is-success";
+        window.setTimeout(() => { manager.closest("details")?.removeAttribute("open"); refreshSupervisorTimestamps(); }, 650);
+      } catch (error) {
+        feedback.textContent = error.message;
+        feedback.className = "is-error";
+        controls.forEach((control) => control.disabled = false);
+      }
+    }
+
+    document.addEventListener("click", (event) => {
+      const dateClose = event.target.closest("[data-date-editor-close]");
+      if (dateClose) {
+        dateClose.closest("details")?.removeAttribute("open");
+        return;
+      }
+      const close = event.target.closest("[data-manager-close]");
+      if (close) {
+        close.closest("details")?.removeAttribute("open");
+        return;
+      }
+      const button = event.target.closest("[data-time-adjust]");
+      if (!button) return;
+      applyTimeAdjustment(button.closest("[data-adjust-url]"), Number(button.dataset.timeAdjust));
+    });
+
+    document.addEventListener("submit", (event) => {
+      const form = event.target.closest("[data-custom-time-adjust]");
+      if (!form) return;
+      event.preventDefault();
+      applyTimeAdjustment(form.closest("[data-adjust-url]"), Number(form.elements.minutes.value));
+    });
+
+    document.addEventListener("submit", async (event) => {
+      const form = event.target.closest("[data-timestamp-end]");
+      if (!form) return;
+      event.preventDefault();
+      form.querySelector("[data-end-utc]").value = new Date().toISOString();
+      form.querySelector("[data-end-timezone]").value = browserTimezone;
+      const response = await fetch(form.action, { method: "POST", body: new FormData(form), headers: { Accept: "application/json" } });
+      if (!response.ok) return;
+      form.closest("details")?.removeAttribute("open");
+      refreshSupervisorTimestamps();
+    });
+
+    document.addEventListener("submit", async (event) => {
+      const form = event.target.closest("[data-timestamp-edit]");
+      if (!form) return;
+      event.preventDefault();
+      form.querySelector("[data-edit-start-utc]").value = utcFromLocalInput(form.elements.start_time.value);
+      form.querySelector("[data-edit-stop-utc]").value = utcFromLocalInput(form.elements.stop_time.value);
+      form.querySelectorAll("[data-edit-timezone]").forEach((input) => {
+        input.value = browserTimezone;
+      });
+      const response = await fetch(form.action, { method: "POST", body: new FormData(form), headers: { Accept: "application/json" } });
+      if (!response.ok) return;
+      refreshSupervisorTimestamps();
+    });
+
+    refreshRequests();
+    refreshSupervisorTimestamps();
+    setInterval(() => { if (!document.hidden) refreshRequests(); }, 5000);
+    setInterval(() => { if (!document.hidden) refreshSupervisorTimestamps(); }, 5000);
+  </script>
+</body>
+</html>

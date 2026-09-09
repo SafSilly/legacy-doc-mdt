@@ -1,0 +1,35 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>DOC · Accounts</title><link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}"><link rel="stylesheet" href="{{ url_for('static', filename='mdt.css') }}"><script defer src="{{ url_for('static', filename='mdt-accounts.js') }}"></script></head>
+<body class="mdt-embedded"><main class="mdt-accounts">
+<header class="mdt-accounts-head"><div><p class="eyebrow">Personnel management</p><h1>Accounts</h1><p class="mdt-muted">{{ accounts|length }} accounts · Select a person to edit their details.</p></div><button type="button" id="add-account">+ Add Account</button></header>
+{% for category, message in get_flashed_messages(with_categories=true) %}<p class="flash {{ category }}" role="alert">{{ message }}</p>{% endfor %}
+<label class="mdt-account-search">Search accounts<input type="search" id="account-search" placeholder="Character name, CID, Discord or callsign…"></label>
+<section class="mdt-account-list">
+{% for person in accounts %}
+<details class="mdt-account-card" data-account-search="{{ person.display_name }} {{ person.username }} {{ person.discord_username }} {{ person.callsign }}">
+<summary><span class="mdt-account-avatar" aria-hidden="true">{{ (person.display_name or person.username)[:1]|upper }}</span><span class="mdt-account-name"><strong>{{ person.display_name or person.username }}</strong><small>CID {{ person.username }} · {{ person.callsign or 'No callsign' }}</small></span>{% if person.setup_pending %}<span class="mdt-tag">Setup pending</span>{% endif %}<span aria-hidden="true">⌄</span></summary>
+<div class="mdt-account-details">
+{% if person.role != 'owner' or current_user.role == 'owner' %}
+<form method="post" action="{{ url_for('mdt_update_account',user_id=person.id) }}" class="mdt-account-fields"><input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+<label>Character ID<input value="{{ person.username }}" readonly><small>Login ID</small></label>
+<label>Character name<input name="display_name" value="{{ person.display_name }}" required maxlength="120"></label>
+<label>Discord username<input name="discord_username" value="{{ person.discord_username }}" maxlength="80" placeholder="Discord username"></label>
+<label>Phone number (optional)<input name="phone_number" value="{{ person.phone_number }}" maxlength="40"></label>
+<label>Callsign<input value="{{ person.callsign }}" readonly><small>Use Promote in personnel to change rank and callsign.</small></label>
+<label>Account access{% if person.role == 'owner' %}<input value="Protected account" readonly><input type="hidden" name="access" value="admin">{% else %}<select name="access"><option value="standard" {% if person.role != 'admin' %}selected{% endif %}>Standard</option><option value="admin" {% if person.role == 'admin' %}selected{% endif %}>Admin</option></select><small>Admin access includes account and department management.</small>{% endif %}</label>
+<label>ERT assignment<select name="ert_rank"><option value="">None</option>{% for rank in ert_ranks %}<option value="{{ rank }}" {% if division_rank_in(person,ert_ranks)==rank %}selected{% endif %}>{{ division_labels[rank] }}</option>{% endfor %}</select></label>
+<label>FTP assignment<select name="ftp_rank"><option value="">None</option>{% for rank in ftp_ranks %}<option value="{{ rank }}" {% if division_rank_in(person,ftp_ranks)==rank %}selected{% endif %}>{{ division_labels[rank] }}</option>{% endfor %}</select></label>
+<div class="mdt-account-save"><span class="mdt-muted">Standard access retains this account's existing employee/training role.</span><button type="submit">Save changes</button></div></form>
+<form method="post" action="{{ url_for('mdt_issue_reset_code',user_id=person.id) }}" class="mdt-account-recovery"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><span class="mdt-muted">{% if person.reset_status=='pending' %}This person requested a password reset.{% elif person.setup_pending %}Their password has not been set yet.{% else %}Help this person access their account.{% endif %}</span><button class="button secondary" type="submit">{{ 'Issue setup code' if person.setup_pending else 'Issue reset code' }}</button></form>
+{% else %}<p class="mdt-muted">This account is protected from editing.</p>{% endif %}
+</div></details>
+{% endfor %}</section><p id="accounts-empty" class="mdt-muted" hidden>No accounts match your search.</p>
+<dialog id="create-account" class="mdt-dialog mdt-create-account"><form method="post" action="{{ url_for('mdt_create_account') }}"><div><p class="eyebrow">New personnel</p><h2>Add Account</h2><p class="mdt-muted">Create their account, then give them a one-use code to set their own password.</p></div><input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+<label>Character ID<input name="username" required pattern="[0-9]+" inputmode="numeric" maxlength="32" autocomplete="off" placeholder="Character ID"></label>
+<label>Character name<input name="display_name" required maxlength="120" placeholder="First and last name"></label>
+<label>Discord username<input name="discord_username" required maxlength="80" placeholder="Discord username"></label>
+<label>Phone number (optional)<input name="phone_number" maxlength="40" placeholder="Character phone number"></label>
+<label>Department rank<select name="rank" id="new-account-rank" required><option value="">Select rank</option>{% for rank,info in ranks.items() %}<option value="{{ rank }}">{{ info[0] }}</option>{% endfor %}</select></label>
+<label>Available callsign<select name="number" id="new-account-callsign" required disabled><option value="">Choose a rank first</option></select></label><p id="callsign-status" class="mdt-muted" role="status"></p><button type="button" class="button secondary" id="retry-callsigns" hidden>Retry callsigns</button>
+<label>Account access<select name="access"><option value="standard">Standard</option><option value="admin">Admin</option></select></label>
+<div class="mdt-dialog-actions"><button type="button" class="button secondary" id="cancel-account">Cancel</button><button id="create-account-submit" type="submit" disabled>Create &amp; generate setup code</button></div></form></dialog>
+</main></body></html>

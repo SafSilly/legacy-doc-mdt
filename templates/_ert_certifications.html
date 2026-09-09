@@ -1,0 +1,25 @@
+<section class="tab-panel ert-certifications-panel">
+  <div class="division-log-workspace-head">
+    <div><span>ERT Certification Management</span><h2>Certification Logs</h2><p>Record certifications from ERT Training Officer, Supervisor, or Command.</p></div>
+    <div class="division-log-count"><strong>{{ certification_logs|length }}</strong><small>records</small></div>
+  </div>
+  <form method="post" action="{{ url_for('add_division_certification_log') }}" class="custom-question-form division-training-form division-log-form">
+    <header class="division-log-form-head"><div><span>New Certification</span><h3>Log a Certification</h3></div><p>The certifier is filled from your signed-in account.</p></header>
+    <label><span>Certified Officer *</span><select name="certified_user_id" required><option value="">Select Officer</option>{% for target in certification_targets %}<option value="{{ target.id }}">{% if target.callsign %}{{ target.callsign|bracket_callsign }} {% endif %}{{ target.display_name or target.username }}</option>{% endfor %}</select></label>
+    <label><span>Certification *</span><input name="certification_name" placeholder="ERT Response / Transport / Firearms" required></label>
+    <label><span>Date / Time *</span><input name="certification_datetime" type="datetime-local" required></label>
+    <label><span>Certification Done By</span><input value="{% if certifier_callsign %}{{ certifier_callsign|bracket_callsign }} {% endif %}{{ certifier_name }}" readonly></label>
+    <label class="wide-field"><span>Notes</span><textarea name="notes" rows="4" placeholder="Anything ERT command should know about this certification."></textarea></label>
+    <footer class="division-log-form-footer"><span>The record will be attributed to your signed-in account.</span><button class="small-button" type="submit">Save Certification Log</button></footer>
+  </form>
+  <div class="question-list division-training-list division-log-list">
+    {% for cert in certification_logs %}
+      <details class="division-log-card">
+        <summary><div class="division-log-identity"><span>Certification Record</span><h3>{{ cert.certification_name }}</h3><p>{{ cert.certification_datetime }}</p></div><div class="division-log-summary-meta"><strong>ERT</strong><small>certified</small></div><span class="division-log-chevron" aria-hidden="true">&#8964;</span></summary>
+        <div class="division-log-card-body"><div class="division-log-facts"><div><span>Certified Officer</span><strong>{{ cert.certified_callsign|bracket_callsign }} {{ cert.certified_name }}</strong></div><div><span>Certification Done By</span><strong>{{ cert.certifier_callsign|bracket_callsign }} {{ cert.certifier_name }}</strong></div><div><span>Created</span><strong>{{ cert.created_at }}</strong></div></div>{% if cert.notes %}<section class="division-log-notes"><span>Notes</span><p>{{ cert.notes }}</p></section>{% endif %}</div>
+      </details>
+    {% else %}
+      <article class="question-card division-log-empty"><span>Certification Archive</span><h2>No certification logs yet</h2><p>Saved ERT certifications will appear here.</p></article>
+    {% endfor %}
+  </div>
+</section>

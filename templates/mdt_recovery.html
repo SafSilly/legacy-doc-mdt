@@ -1,0 +1,14 @@
+{% extends 'mdt_auth_base.html' %}
+{% block title %}DOC · Password recovery{% endblock %}
+{% block heading %}Account recovery{% endblock %}
+{% block content %}
+<p class="terminal-description">Use your setup code to choose your first password, or request a reset code from command if you cannot sign in.</p>
+<details class="terminal-request"><summary>Request a reset code</summary><form method="post" action="{{ url_for('mdt_forgot_password') }}" class="terminal-auth-form"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><label for="request-cid">CID</label><input id="request-cid" name="username" autocomplete="username" placeholder="Enter your CID" required><button class="terminal-submit" type="submit">Request code from command</button><p class="terminal-description">After submitting, contact command to verify your identity. Codes are provided by an administrator, not sent by email.</p></form></details>
+<div class="terminal-divider"><span>Already have a code?</span></div>
+<form method="post" action="{{ url_for('mdt_reset_password') }}" class="terminal-auth-form" id="use-code"><input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+<label for="reset-cid">CID</label><input id="reset-cid" name="username" autocomplete="username" placeholder="Enter your CID" required>
+<label for="reset-code">Setup / reset code</label><input id="reset-code" name="reset_code" autocomplete="one-time-code" placeholder="XXXXXX-XXXXXX-XXXXXX-XXXXXX" maxlength="40" required spellcheck="false">
+<label for="new-password">New password</label><input id="new-password" type="password" name="password" autocomplete="new-password" minlength="12" maxlength="128" placeholder="At least 12 characters" required>
+<label for="confirm-password">Confirm new password</label><input id="confirm-password" type="password" name="confirm_password" autocomplete="new-password" minlength="12" maxlength="128" placeholder="Re-enter your new password" required>
+<button class="terminal-submit" type="submit">Reset password</button></form><a class="terminal-back" href="{{ url_for('mdt_login') }}">← Back to sign in</a>
+{% endblock %}

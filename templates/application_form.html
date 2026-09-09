@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ form_config.title }}</title>
+  {% include "_social_meta.html" %}
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='bolingbroke-logo.png') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body class="{% if embedded %}embedded-panel-body{% endif %}">
+  <main class="shell">
+    <nav class="top-actions">
+      {% include "_back_button.html" %}
+      <a class="button secondary" href="{{ url_for('applications_page') }}">Applications</a>
+      <a class="button secondary" href="{{ url_for('index') }}">Home</a>
+    </nav>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <section class="flash-stack">
+          {% for category, message in messages %}
+            <div class="flash {{ category }}">{{ message }}</div>
+          {% endfor %}
+        </section>
+      {% endif %}
+    {% endwith %}
+
+    <header class="hero">
+      <div class="brand-block">
+        <img class="site-logo" src="{{ url_for('static', filename='bolingbroke-logo.png') }}" alt="Bolingbroke State Penitentiary logo">
+        <div>
+          <p class="eyebrow">San Andreas Department of Corrections</p>
+          <h1>{{ form_config.title }}</h1>
+          <p class="lede">{{ form_config.description }}</p>
+        </div>
+      </div>
+    </header>
+
+    <section class="panel complaint-panel application-panel application-panel-{{ application_type }}">
+      <form method="post" action="{{ url_for('submit_application', application_type=application_type, embed='1' if embedded else None) }}" class="custom-question-form complaint-form application-form--{{ application_type }}">
+        {% if application_type in ['ftp', 'ert'] %}
+          <div class="application-form-meta wide-field"><div><span>{{ application_type|upper }} candidate file</span><small>Complete each response clearly. Your submission goes directly to {{ application_type|upper }} command review.</small></div><b>{{ form_config.fields|length }} prompts</b></div>
+        {% endif %}
+        {% for field in form_config.fields %}
+          {% if field.type == "textarea" %}
+            <label class="wide-field">
+              <span>{{ field.label }}{% if field.required %} *{% endif %}</span>
+              <textarea name="{{ field.name }}" rows="{% if application_type == 'ftp' %}4{% else %}5{% endif %}" {% if field.required %}required{% endif %}></textarea>
+            </label>
+          {% elif field.type == "select" %}
+            <label>
+              <span>{{ field.label }}{% if field.required %} *{% endif %}</span>
+              <select name="{{ field.name }}" {% if field.required %}required{% endif %}>
+                <option value="">Select Rank</option>
+                {% for option in field.options %}
+                  <option value="{{ option }}">{{ option }}</option>
+                {% endfor %}
+              </select>
+            </label>
+          {% elif field.type == "radio" %}
+            <fieldset class="wide-field radio-card-group{% if application_type == 'ftp' %} application-knowledge-check{% endif %}">
+              <legend>{% if application_type == 'ftp' %}<small>Knowledge check</small>{% endif %}{{ field.label }}{% if field.required %} *{% endif %}</legend>
+              {% for option in field.options %}
+                <label class="application-choice-option">
+                  <input type="radio" name="{{ field.name }}" value="{{ option }}" {% if field.required %}required{% endif %}>
+                  {% if application_type == 'ftp' %}<b>{{ 'ABCD'[loop.index0] }}</b>{% endif %}
+                  <span>{{ option }}</span>
+                </label>
+              {% endfor %}
+            </fieldset>
+          {% else %}
+            <label>
+              <span>{{ field.label }}{% if field.required %} *{% endif %}</span>
+              <input
+                name="{{ field.name }}"
+                value="{{ identity_values.get(field.name, '') }}"
+                {% if field.name in readonly_fields %}readonly{% endif %}
+                {% if field.required %}required{% endif %}
+              >
+            </label>
+          {% endif %}
+        {% endfor %}
+        <button class="small-button" type="submit">Submit{% if application_type == 'ftp' %} FTP{% endif %} Application</button>
+      </form>
+    </section>
+  </main>
+</body>
+</html>

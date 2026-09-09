@@ -1,0 +1,104 @@
+/* Profile-only layout; shared roster and dashboard styling stays scoped. */
+.doc-profile .employee-profile-shell { width:min(1320px,calc(100% - 32px)); padding:16px 0 24px; }
+.doc-profile .employee-profile-toolbar { background:none; border:0; padding:0; margin-bottom:16px; min-height:34px; }
+.doc-profile .employee-profile-back { padding-left:0; font-weight:500; font-size:12px; }
+.doc-profile .employee-profile-refresh { font-size:11px; font-weight:500; }
+.doc-profile .employee-profile-hero { min-height:108px; align-items:center; gap:18px; padding:22px; border-color:#343128; border-radius:16px; background:#171714; box-shadow:none; }
+.profile-avatar { display:grid; place-items:center; width:56px; height:56px; flex-shrink:0; border:1px solid #52452b; border-radius:17px; background:#292419; color:#d2b571; font-size:23px; font-weight:600; }
+.doc-profile .employee-profile-identity h1 { font-size:clamp(22px,2.6vw,30px); margin:0 0 9px; letter-spacing:-.025em; }
+.doc-profile .employee-profile-identity > div > b { font-size:12px; font-weight:500; }
+.doc-profile .employee-profile-status { font-size:9px; font-weight:500; text-transform:none; letter-spacing:0; }
+.doc-profile .employee-profile-link-notice { padding:11px 14px; border:0; background:#c9a24a08; border-radius:10px; margin-top:12px; }
+.doc-profile .employee-profile-link-notice strong { font-weight:600; }
+.doc-profile .employee-profile-link-notice span { font-size:11px; }
+.doc-profile .employee-profile-grid { grid-template-columns:minmax(0,1.1fr) minmax(0,1fr); gap:16px; margin-top:16px; align-items:stretch; }
+.doc-profile .employee-profile-panel { background:#161614; border:1px solid #302e27; border-radius:16px; box-shadow:none; }
+.doc-profile .employee-profile-panel > header { padding:16px 18px; min-height:55px; }
+.doc-profile .employee-profile-panel h2 { font-size:15px; font-weight:600; }
+.doc-profile .employee-profile-details dl { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); column-gap:22px; padding:6px 18px 14px; }
+.doc-profile .employee-profile-details dl > div { display:flex; flex-direction:column; align-items:flex-start; justify-content:center; gap:6px; min-height:58px; padding:10px 0; }
+.doc-profile .employee-profile-details dt { font-size:11px; }
+.doc-profile .employee-profile-details dd { text-align:left; font-size:12px; font-weight:500; }
+.doc-profile .employee-profile-details dl > div:nth-last-child(-n+2) { border-bottom:0; }
+.doc-profile .employee-certification-list { gap:0; padding:2px 18px; }
+.doc-profile .employee-certification-card { min-height:51px; grid-template-columns:28px minmax(0,1fr) auto; gap:10px; padding:10px 0; border:0; border-bottom:1px solid #ffffff0a; border-radius:0; background:none; }
+.doc-profile .employee-certification-card:last-child { border-bottom:0; }
+.doc-profile .employee-certification-icon { width:27px; height:27px; border-radius:7px; font-size:8px; font-weight:500; }
+.doc-profile .employee-certification-card > div strong { font-size:12px; font-weight:500; }
+.doc-profile .employee-certification-card > b { font-size:9px; text-transform:none; letter-spacing:0; font-weight:500; }
+.doc-profile .employee-certification-card.not-certified { opacity:1; }
+.doc-profile .employee-certification-card.not-certified .employee-certification-icon { color:#9c978b; border-color:#36332b; background:#ffffff03; }
+.doc-profile .employee-profile-certifications > footer { padding:10px 18px 16px; font-size:10px; }
+.doc-profile .duty-hours { margin-top:16px; }
+.doc-profile .duty-heading .eyebrow { display:none; }
+.doc-profile .duty-controls { padding:16px 18px; }
+.doc-profile .duty-controls form { display:flex; flex-direction:row; flex-wrap:wrap; align-items:center; }
+.doc-profile .duty-controls label { flex:0 0 auto; width:auto; }
+.doc-profile .duty-controls input[type=date] { max-width:200px; }
+.doc-profile .duty-weeks { padding:0 18px 18px; }
+.doc-profile .duty-week { padding:14px 12px; background:#ffffff02; }
+.doc-profile .duty-week.current { background:#c9a24a08; border-color:#8b7138; }
+.doc-profile .duty-week h3 { font-size:13px; font-weight:600; }
+.doc-profile .duty-week .duty-total { font-size:13px; }
+@media(max-width:720px) { .doc-profile .employee-profile-grid { grid-template-columns:1fr; } .doc-profile .employee-profile-toolbar { flex-direction:row; align-items:center; flex-wrap:wrap; } .doc-profile .employee-profile-toolbar > div { width:auto; } .doc-profile .employee-profile-link-notice { flex-direction:column; align-items:flex-start; gap:5px; } }
+@media(max-width:420px) { .doc-profile .employee-profile-shell { width:calc(100% - 20px); } .doc-profile .employee-profile-hero { padding:16px; gap:12px; } .profile-avatar { width:44px; height:44px; } .doc-profile .employee-certification-card { grid-template-columns:24px minmax(0,1fr); } .doc-profile .employee-certification-card > b { grid-column:2; justify-self:start; } }
+.doc-profile .employee-profile-toolbar { gap:12px; margin-bottom:10px; flex-wrap:wrap; }
+.doc-profile .profile-title-row { display:flex; align-items:center; gap:8px; flex:1; flex-wrap:wrap; min-width:0; }
+.doc-profile .profile-title-row h1 { font-size:18px; font-weight:650; letter-spacing:-.02em; margin:0; overflow-wrap:anywhere; }
+.doc-profile .employee-profile-back { padding:8px 11px; border:1px solid #333127; border-radius:18px; background:#1a1916; }
+.profile-division-icon { width:32px; height:32px; object-fit:contain; flex-shrink:0; }
+.doc-profile .profile-refresh-controls { width:auto; flex-shrink:0; }
+.doc-profile .profile-refresh-controls .roster-sync-status { display:none; }
+.doc-profile .employee-profile-grid { grid-template-columns:minmax(260px,.7fr) minmax(0,1.6fr); align-items:start; }
+.doc-profile .employee-profile-details { grid-column:1; grid-row:1; }
+.doc-profile .employee-profile-certifications { grid-column:1; grid-row:2; }
+.doc-profile .duty-hours { grid-column:2; grid-row:1 / span 2; margin:0; min-width:0; }
+.doc-profile .employee-profile-details dl { display:grid; grid-template-columns:1fr; gap:6px; padding:12px; }
+.doc-profile .employee-profile-details dl > div { flex-direction:row; justify-content:space-between; align-items:center; gap:12px; min-height:34px; padding:8px 11px; background:#ffffff04; border:1px solid #ffffff07; border-radius:18px; }
+.doc-profile .employee-profile-details dd { text-align:right; }
+.doc-profile .duty-weeks { grid-template-columns:repeat(5,minmax(145px,1fr)); overflow-x:auto; padding-bottom:16px; }
+.doc-profile .duty-controls p { background:#ffffff04; border:1px solid #ffffff07; border-radius:18px; padding:10px 12px; font-size:12px; }
+.doc-profile .duty-controls form { background:#ffffff04; border:1px solid #ffffff07; border-radius:18px; padding:9px 12px; }
+.doc-profile .duty-controls input[type=date] { flex-basis:160px; max-width:160px; min-height:34px; padding:6px 9px; }
+.doc-profile .employee-profile-status.inactive { color:#e8a5a5; background:#a7444410; border-color:#843f3f55; }
+@media(max-width:800px) { .doc-profile .employee-profile-grid { grid-template-columns:1fr; } .doc-profile .employee-profile-details,.doc-profile .employee-profile-certifications,.doc-profile .duty-hours { grid-column:auto; grid-row:auto; } .doc-profile .duty-hours { order:1; } .doc-profile .employee-profile-certifications { order:2; } .doc-profile .profile-title-row h1 { font-size:16px; } }
+/* Compact officer record */
+.doc-profile .employee-profile-shell { width:calc(100% - 28px); max-width:1600px; }
+.doc-profile .employee-profile-grid { gap:12px; grid-template-columns:minmax(250px,1fr) minmax(0,2fr); }
+.doc-profile .employee-profile-panel > header { padding:12px 14px; min-height:46px; }
+.doc-profile .employee-profile-panel h2 { font-size:14px; }
+.doc-profile .employee-profile-details dl { margin:0; gap:5px; }
+.doc-profile .employee-profile-details dd { font-weight:600; overflow-wrap:anywhere; }
+.doc-profile .duty-hours { grid-row:1; }
+.doc-profile .employee-profile-certifications { grid-row:2; }
+.doc-profile .employee-profile-certifications > summary { padding:14px; cursor:pointer; font-size:13px; font-weight:600; }
+.doc-profile .employee-profile-certifications > summary span { float:right; font-size:10px; color:var(--muted); font-weight:400; }
+.doc-profile .duty-controls { padding:12px; gap:8px; }
+.doc-profile .duty-controls p { padding:7px 10px; }
+.doc-profile .duty-controls form { padding:7px 10px; }
+.doc-profile .duty-weeks { grid-template-columns:repeat(5,minmax(128px,1fr)); gap:8px; padding:0 12px 12px; }
+.doc-profile .duty-week { padding:11px 9px; border-radius:16px; }
+.doc-profile .duty-week dl { gap:8px; margin-top:12px; }
+.doc-profile .duty-week dl > div { font-size:11px; }
+.doc-profile .duty-week .duty-total { font-size:12px; padding-top:9px; }
+.officer-notes { grid-column:2; grid-row:2; min-width:0; }
+.officer-notes > header { display:flex; justify-content:space-between; align-items:center; }
+.officer-notes > header > span,.notes-empty { color:var(--muted); font-size:11px; }
+.officer-notes-body { padding:12px; }
+.officer-notes form { display:grid; gap:8px; }
+.officer-notes label { font-size:12px; }
+.officer-notes label small { color:var(--muted); font-size:10px; margin-left:8px; }
+.officer-notes textarea { width:100%; min-height:64px; resize:vertical; border-radius:12px; font:inherit; font-size:12px; }
+.officer-notes form > div { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.officer-notes [role=status] { font-size:12px; }
+.officer-note { border-top:1px solid #ffffff0d; padding-top:12px; margin-top:14px; }
+.officer-note header { display:flex; flex-wrap:wrap; justify-content:space-between; gap:8px; font-size:12px; }
+.officer-note time { color:var(--muted); font-size:10px; }
+.officer-note p { white-space:pre-wrap; overflow-wrap:anywhere; font-size:12px; line-height:1.6; }
+.officer-note summary { font-size:11px; cursor:pointer; color:var(--muted); margin-bottom:8px; }
+@media(max-width:800px) { .doc-profile .employee-profile-grid { grid-template-columns:1fr; } .doc-profile .employee-profile-details,.doc-profile .employee-profile-certifications,.doc-profile .duty-hours,.doc-profile .officer-notes { grid-column:1; grid-row:auto; } .doc-profile .officer-notes { order:2; } .doc-profile .employee-profile-certifications { order:3; } }
+.doc-profile .officer-notes > header > span { border:0; background:none; padding:0; white-space:nowrap; width:auto; }
+@media(min-width:801px) { .doc-profile .duty-weeks { grid-template-columns:repeat(5,minmax(0,1fr)); } .doc-profile .duty-week { padding:10px 7px; } .doc-profile .duty-week dl > div { font-size:10px; gap:3px; } .doc-profile .duty-week h3 { font-size:11px; } .doc-profile .duty-week > time { font-size:10px; } }
+.doc-profile .profile-details-column { grid-column:1; grid-row:1 / span 2; display:grid; align-content:start; gap:12px; min-width:0; }
+.doc-profile .profile-details-column > .employee-profile-panel { grid-column:auto; grid-row:auto; }
+@media(max-width:800px) { .doc-profile .profile-details-column { grid-column:1; grid-row:auto; } }

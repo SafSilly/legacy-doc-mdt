@@ -1,0 +1,34 @@
+<section class="tab-panel ert-training-panel">
+  <div class="division-log-workspace-head">
+    <div><span>ERT Training Administration</span><h2>ERT Training Logs</h2><p>Record ERT sessions and joint-department training in one response workspace.</p></div>
+    <div class="division-log-count"><strong>{{ training_logs|length }}</strong><small>records</small></div>
+  </div>
+  <form method="post" action="{{ url_for('add_division_training_log') }}" class="custom-question-form division-training-form division-log-form">
+    <header class="division-log-form-head"><div><span>New Record</span><h3>Log a Training Session</h3></div><p>Fields marked required must be completed before saving.</p></header>
+    <label class="division-log-title-field"><span>Training Title *</span><input name="training_title" placeholder="ERT response training" required></label>
+    <label><span>Date / Time *</span><input name="training_datetime" type="datetime-local" required></label>
+    <fieldset class="wide-field department-toggle-group">
+      <legend>Departments Involved *</legend>
+      {% for department in training_departments %}<label><input type="checkbox" name="departments" value="{{ department }}"><span>{{ department }}</span></label>{% endfor %}
+    </fieldset>
+    <label class="wide-field"><span>Attendees</span><textarea name="attendees" rows="3" placeholder="Names, callsigns, or departments present"></textarea></label>
+    <label class="wide-field"><span>Training Notes *</span><textarea name="notes" rows="6" placeholder="What was trained, who led it, and any follow-up needed." required></textarea></label>
+    <footer class="division-log-form-footer"><span>The record will be attributed to your signed-in account.</span><button class="small-button" type="submit">Save Training Log</button></footer>
+  </form>
+
+  <div class="division-log-history-head"><div><span>ERT Archive</span><h3>Recorded Training</h3></div><small>{{ training_logs|length }} total</small></div>
+  <div class="question-list division-training-list division-log-list">
+    {% for log in training_logs %}
+      <details class="division-log-card">
+        <summary><div class="division-log-identity"><span>Training Record</span><h3>{{ log.training_title }}</h3><p>{{ log.training_datetime }}</p></div><div class="division-log-summary-meta"><strong>{{ log.departments|length }}</strong><small>department{% if log.departments|length != 1 %}s{% endif %}</small></div><span class="division-log-chevron" aria-hidden="true">&#8964;</span></summary>
+        <div class="division-log-card-body">
+          <div class="division-log-facts"><div><span>Logged By</span><strong>{{ log.trainer_callsign|bracket_callsign }} {{ log.trainer_name }}</strong></div><div><span>Created</span><strong>{{ log.created_at }}</strong></div><div><span>Departments</span><strong>{{ log.departments|join(', ') }}</strong></div></div>
+          {% if log.attendees %}<section><span>Attendees</span><p>{{ log.attendees }}</p></section>{% endif %}
+          <section class="division-log-notes"><span>Training Notes</span><p>{{ log.notes }}</p></section>
+        </div>
+      </details>
+    {% else %}
+      <article class="question-card division-log-empty"><span>Training Archive</span><h2>No training records yet</h2><p>Saved ERT training sessions will appear here.</p></article>
+    {% endfor %}
+  </div>
+</section>

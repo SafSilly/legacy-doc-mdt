@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>DOC Applications</title>
+  {% include "_social_meta.html" %}
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='bolingbroke-logo.png') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body class="{% if request.args.get('embed') %}embedded-panel-body{% endif %}">
+  <main class="shell">
+    {% include "_public_directory.html" %}
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <section class="flash-stack">
+          {% for category, message in messages %}
+            <div class="flash {{ category }}">{{ message }}</div>
+          {% endfor %}
+        </section>
+      {% endif %}
+    {% endwith %}
+
+    <header class="hero">
+      <div class="brand-block">
+        <img class="site-logo" src="{{ url_for('static', filename='bolingbroke-logo.png') }}" alt="Bolingbroke State Penitentiary logo">
+        <div>
+          <p class="eyebrow">San Andreas Department of Corrections</p>
+          <h1>DOC Applications</h1>
+          <p class="lede">Choose the application you need to submit.</p>
+        </div>
+      </div>
+    </header>
+
+    <section class="application-choice-grid">
+      {% for slug, app_form in applications.items() %}
+        <article class="panel application-choice-card application-choice-card--{{ slug }}">
+          <header class="application-choice-card-head">
+            <span class="application-choice-badge">{{ slug|upper }}</span>
+            <span class="application-choice-status">Open intake</span>
+          </header>
+          <div class="application-choice-card-body">
+            <h2>{{ app_form.short_title }}</h2>
+            <p>{{ app_form.description }}</p>
+          </div>
+          <a class="button small-button application-choice-action" href="{{ url_for('application_form', application_type=slug, embed='1' if request.args.get('embed') else None) }}"><span>Start application</span><b aria-hidden="true">→</b></a>
+        </article>
+      {% endfor %}
+    </section>
+  </main>
+</body>
+</html>

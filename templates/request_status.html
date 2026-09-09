@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ selected_quiz.title }} Request</title>
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='bolingbroke-logo.png') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body class="quiz-page quiz-request-page">
+  <main class="shell focus-shell">
+    <nav class="top-actions">
+      {% include "_back_button.html" %}
+      <a class="button secondary" href="{{ url_for('quiz', slug=selected_quiz.slug) }}">Back</a>
+    </nav>
+
+    <header class="hero focus-hero">
+      <div class="brand-block">
+        <img class="site-logo" src="{{ url_for('static', filename='bolingbroke-logo.png') }}" alt="Bolingbroke State Penitentiary logo">
+        <div>
+          <p class="eyebrow">{{ selected_quiz.title }}</p>
+          <h1 data-request-title>Request {{ request_row.status|title }}</h1>
+          <p class="lede">{{ request_row.trainee_name }} · {{ request_row.callsign }} · {{ request_row.created_at }}</p>
+        </div>
+      </div>
+      <div class="score-card">
+        <span>Status</span>
+        <strong data-request-score-status>{{ request_row.status|title }}</strong>
+        <small>Supervisor approval</small>
+      </div>
+    </header>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <section class="flash-stack">
+          {% for category, message in messages %}
+            <div class="flash {{ category }}">{{ message }}</div>
+          {% endfor %}
+        </section>
+      {% endif %}
+    {% endwith %}
+
+    <section class="panel result-panel" data-status-url="{{ url_for('live_request_status', slug=selected_quiz.slug, request_id=request_row.id) }}">
+      <div>
+        {% if request_row.status == 'pending' %}
+          <span class="result-status">Pending</span>
+          <h2 data-request-heading>Waiting for Supervisor</h2>
+          <p data-request-message>Your request was sent to the supervisor panel. It expires in <b data-request-countdown>{{ request_payload(request_row).expires_label }}</b> if it is not accepted.</p>
+        {% elif request_row.status == 'accepted' %}
+          <span class="result-status passed">Accepted</span>
+          <h2 data-request-heading>Ready to Start</h2>
+          <p data-request-message>Your request was accepted. Start the exam when you are ready.</p>
+        {% elif request_row.status == 'expired' %}
+          <span class="result-status failed">Expired</span>
+          <h2 data-request-heading>Request Expired</h2>
+          <p data-request-message>This request expired because it was not accepted within {{ request_expiry_minutes }} minutes. Please submit a new request.</p>
+        {% else %}
+          <span class="result-status failed">Denied</span>
+          <h2 data-request-heading>Request Denied</h2>
+          <p data-request-message>Your request was denied by a supervisor.</p>
+        {% endif %}
+      </div>
+      <div data-request-actions>
+      {% if request_row.status == 'accepted' %}
+        <form method="post" action="{{ url_for('begin_approved_quiz', slug=selected_quiz.slug, request_id=request_row.id) }}" data-approved-start>
+          <button type="submit">Start Approved Exam</button>
+        </form>
+      {% elif request_row.status == 'expired' %}
+        <span class="button secondary">Expired</span>
+      {% elif request_row.status == 'denied' %}
+        <span class="button secondary">Denied</span>
+      {% else %}
+        <span class="button secondary">Waiting</span>
+      {% endif %}
+      </div>
+    </section>
+  </main>
+  <script>
+    const panel = document.querySelector("[data-status-url]");
+    const title = document.querySelector("[data-request-title]");
+    const scoreStatus = document.querySelector("[data-request-score-status]");
+    const badge = panel?.querySelector(".result-status");
+    const heading = document.querySelector("[data-request-heading]");
+    const message = document.querySelector("[data-request-message]");
+    const actions = document.querySelector("[data-request-actions]");
+    const beginUrl = "{{ url_for('begin_approved_quiz', slug=selected_quiz.slug, request_id=request_row.id) }}";
+
+    function statusLabel(status) {
+      return status.charAt(0).toUpperCase() + status.slice(1);
+    }
+
+    function renderStatus(request) {
+      const status = request.status;
+      const label = statusLabel(status);
+      title.textContent = `Request ${label}`;
+      scoreStatus.textContent = label;
+      badge.textContent = label;
+      badge.className = `result-status ${status === "accepted" ? "passed" : ["denied", "expired"].includes(status) ? "failed" : ""}`;
+      if (status === "accepted") {
+        heading.textContent = "Ready to Start";
+        message.textContent = "Your request was accepted. Start the exam when you are ready.";
+        actions.innerHTML = `<form method="post" action="${beginUrl}" data-approved-start><button type="submit">Start Approved Exam</button></form>`;
+      } else if (status === "denied") {
+        heading.textContent = "Request Denied";
+        message.textContent = "Your request was denied by a supervisor.";
+        actions.innerHTML = '<span class="button secondary">Denied</span>';
+      } else if (status === "expired") {
+        heading.textContent = "Request Expired";
+        message.textContent = "This request expired because it was not accepted within {{ request_expiry_minutes }} minutes. Please submit a new request.";
+        actions.innerHTML = '<span class="button secondary">Expired</span>';
+      } else {
+        heading.textContent = "Waiting for Supervisor";
+        message.innerHTML = `Your request was sent to the supervisor panel. It expires in <b data-request-countdown>${request.expires_label || "0:00"}</b> if it is not accepted.`;
+        actions.innerHTML = '<span class="button secondary">Waiting</span>';
+      }
+    }
+
+    async function pollStatus() {
+      const response = await fetch(panel.dataset.statusUrl, { headers: { Accept: "application/json" } });
+      if (!response.ok) return;
+      const request = await response.json();
+      renderStatus(request);
+      if (request.status !== "pending") clearInterval(statusTimer);
+    }
+
+    const statusTimer = setInterval(pollStatus, 3000);
+    pollStatus();
+    document.addEventListener("submit", (event) => {
+      if (!event.target.matches("[data-approved-start]")) return;
+      const button = event.target.querySelector("button[type='submit']");
+      if (button) { button.disabled = true; button.textContent = "Starting..."; }
+    });
+  </script>
+</body>
+</html>

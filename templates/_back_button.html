@@ -1,0 +1,10 @@
+<button class="page-back-button" type="button" data-back-button aria-label="Go back to previous page">Back</button>
+<script>
+  document.querySelector("[data-back-button]")?.addEventListener("click", () => {
+    if (window.history.length > 1) {
+      window.history.back();
+      return;
+    }
+    window.location.href = "{{ url_for('index') }}";
+  });
+</script>

@@ -1,0 +1,777 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Admin Panel</title>
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='bolingbroke-logo.png') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  <script defer src="{{ url_for('static', filename='live-actions.js') }}"></script>
+</head>
+<body class="{% if request.args.get('embed') %}embedded-panel-body{% endif %}">
+  <main class="shell">
+    <nav class="top-actions">
+      {% include "_back_button.html" %}
+      <a class="button secondary" href="{{ url_for('quiz_home') }}">Quiz Site</a>
+      <a class="button secondary" href="{{ url_for('hub') }}">Hub</a>
+      <form method="post" action="{{ url_for('supervisor_logout') }}">
+        <button class="button secondary" type="submit">Log Out</button>
+      </form>
+    </nav>
+
+    <header class="hero">
+      <div class="brand-block">
+        <img class="site-logo" src="{{ url_for('static', filename='bolingbroke-logo.png') }}" alt="Bolingbroke State Penitentiary logo">
+        <div>
+          <p class="eyebrow">Admin Access</p>
+          <h1>Admin Panel</h1>
+          <p class="lede">Signed in as {{ current_user.display_name or current_user.username }}. Manage accounts, submissions, FTOs, and quiz questions.</p>
+        </div>
+      </div>
+{% if not embedded %}      <div class="score-card">
+        <span>{{ current_user.role|title }}</span>
+        <strong>Admin</strong>
+        <small>tools</small>
+      </div>{% endif %}
+    </header>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <section class="flash-stack">
+          {% for category, message in messages %}
+            <div class="flash {{ category }}">{{ message }}</div>
+          {% endfor %}
+        </section>
+      {% endif %}
+    {% endwith %}
+
+    <section class="panel tab-shell supervisor-tabs">
+      <input type="radio" name="admin-tab" id="accounts-tab" checked>
+      <input type="radio" name="admin-tab" id="builtin-tab">
+      <input type="radio" name="admin-tab" id="add-custom-tab">
+      <input type="radio" name="admin-tab" id="custom-tab">
+      <input type="radio" name="admin-tab" id="complaints-tab">
+      <div class="tab-buttons">
+        <label for="accounts-tab">Accounts</label>
+        <label for="builtin-tab">Edit Built-In Questions</label>
+        <label for="add-custom-tab">Add Custom Question</label>
+        <label for="custom-tab">Custom Questions</label>
+        <label for="complaints-tab">Complaints</label>
+      </div>
+
+      <section class="tab-panel accounts-panel boxed-section">
+        <div class="section-heading-row">
+          <div>
+            <h2>Accounts</h2>
+            <p>Create logins, search the roster, and update ranks without opening role folders.</p>
+          </div>
+          <div class="account-roster-summary">
+            <span>{{ supervisor_users|length }} total</span>
+            <span>{{ supervisor_users_by_role.owner|length + supervisor_users_by_role.admin|length }} command</span>
+          </div>
+        </div>
+        <section class="account-create-panel">
+          <header class="account-workspace-heading">
+            <div><span>New Account</span><h3>Create Login</h3><p>Add a member and assign their initial access.</p></div>
+          </header>
+        <form method="post" action="{{ url_for('add_supervisor_user') }}" class="custom-question-form account-create-form">
+          <label>
+            <span>CID / Username</span>
+            <input name="username" autocomplete="off" required>
+          </label>
+          <label>
+            <span>Name</span>
+            <input name="display_name" autocomplete="name" required>
+          </label>
+          <label>
+            <span>Callsign</span>
+            <input name="callsign" placeholder="CC-501">
+          </label>
+          <label>
+            <span>Phone Number</span>
+            <input name="phone_number" placeholder="555-0123" autocomplete="tel">
+          </label>
+          <label>
+            <span>Password</span>
+            <input type="password" name="password" autocomplete="new-password" required>
+          </label>
+          <label>
+            <span>Role</span>
+            <select name="role">
+              {% for role in user_roles %}
+                {% if role != 'owner' or current_user.role == 'owner' %}<option value="{{ role }}">{{ role|title }}</option>{% endif %}
+              {% endfor %}
+            </select>
+          </label>
+          <button type="submit">Create Login</button>
+        </form>
+        </section>
+
+        <div class="account-stat-grid" aria-label="Account role totals">
+          {% for role in user_roles %}
+            {% set users = supervisor_users_by_role[role] %}
+            <button class="account-stat-card" type="button" data-account-role-jump="{{ role }}">
+              <span>{{ role|title }}</span>
+              <strong>{{ users|length }}</strong>
+            </button>
+          {% endfor %}
+        </div>
+
+        <div class="account-roster-panel">
+          <header class="account-roster-head">
+            <div><span>Directory</span><h3>Account Roster</h3><p>Search, filter, and open an account to manage its details.</p></div>
+            <strong data-account-count>{{ supervisor_users|length }} showing</strong>
+          </header>
+          <div class="account-roster-toolbar">
+            <label class="account-search-field">
+              <span>Search roster</span>
+              <input type="search" data-account-search placeholder="Name, CID, callsign, phone...">
+            </label>
+            <label>
+              <span>Role</span>
+              <select data-account-role-filter>
+                <option value="">All roles</option>
+                {% for role in user_roles %}
+                  <option value="{{ role }}">{{ role|title }}</option>
+                {% endfor %}
+              </select>
+            </label>
+            <label>
+              <span>Division</span>
+              <select data-account-division-filter>
+                <option value="">All division assignments</option>
+                {% for division_rank in division_ranks %}
+                  <option value="{{ division_rank }}">{{ division_rank_labels[division_rank] }}</option>
+                {% endfor %}
+              </select>
+            </label>
+            <button class="button secondary small-button" type="button" data-account-clear>Clear</button>
+          </div>
+
+          <div class="account-card-list account-roster-wrap">
+            {% for user in supervisor_users %}
+              {% set role_label = user.role|title %}
+              {% set division_label = division_rank_labels.get(user.division_rank, 'None') %}
+              {% set additional_division_label = division_rank_labels.get(user.additional_division_rank, '') %}
+              <details class="account-card" data-account-row data-role="{{ user.role }}" data-division="{{ user.division_rank }} {{ user.additional_division_rank }}" data-search="{{ (user.display_name ~ ' ' ~ user.username ~ ' ' ~ user.callsign ~ ' ' ~ user.phone_number ~ ' ' ~ role_label ~ ' ' ~ division_label ~ ' ' ~ additional_division_label)|lower }}">
+                <summary class="account-card-head">
+                  <div class="account-card-person">
+                    <strong>{{ user.display_name or user.username }}</strong>
+                    <span>{{ user.callsign|bracket_callsign if user.callsign else 'No callsign' }}</span>
+                  </div>
+                  <div class="account-card-chips">
+                    <span>{{ role_label }}</span>
+                    {% if user.division_rank %}
+                      <span>{{ division_label }}</span>
+                    {% endif %}
+                    {% if user.additional_division_rank %}
+                      <span>{{ additional_division_label }}</span>
+                    {% endif %}
+                  </div>
+                </summary>
+                <div class="account-card-body">
+                  <form id="user-update-{{ user.id }}" method="post" action="{{ url_for('update_supervisor_user', user_id=user.id) }}" class="account-detail-form">
+                    <label>
+                      <span>Name</span>
+                      <input name="display_name" value="{{ user.display_name }}" required aria-label="Name for {{ user.username }}">
+                    </label>
+                    <label>
+                      <span>Callsign</span>
+                      <input name="callsign" value="{{ user.callsign }}" placeholder="CC-501" aria-label="Callsign for {{ user.username }}">
+                    </label>
+                    <label>
+                      <span>CID / Username</span>
+                      <input value="{{ user.username }}" readonly aria-label="CID for {{ user.username }}">
+                    </label>
+                    <label>
+                      <span>Phone Number</span>
+                      <input name="phone_number" value="{{ user.phone_number }}" placeholder="No phone number" autocomplete="tel" aria-label="Phone number for {{ user.username }}">
+                    </label>
+                    <label>
+                      <span>Role</span>
+                      <select name="role" {% if user.role == 'owner' %}disabled{% endif %} aria-label="Role for {{ user.username }}">
+                        {% for option_role in user_roles %}
+                          {% if option_role != 'owner' or current_user.role == 'owner' or user.role == 'owner' %}<option value="{{ option_role }}" {% if user.role == option_role %}selected{% endif %}>{{ option_role|title }}</option>{% endif %}
+                        {% endfor %}
+                      </select>
+                      {% if user.role == 'owner' %}
+                        <input type="hidden" name="role" value="owner">
+                      {% endif %}
+                    </label>
+                    <fieldset class="division-role-choice division-role-choice-compact">
+                      <legend>Division Assignments</legend>
+                      {% for group in division_role_groups %}
+                        <section class="division-role-group division-role-{{ group.key }}">
+                          <header><strong>{{ group.short }}</strong><span>{{ group.title }}</span></header>
+                          <div>
+                            <label class="division-role-none"><input type="radio" name="{{ group.key }}_rank" value="" {% if user.division_rank not in group.ranks and user.additional_division_rank not in group.ranks %}checked{% endif %}><span>No {{ group.short }} assignment</span></label>
+                            {% for division_rank in group.ranks %}
+                              <label><input type="radio" name="{{ group.key }}_rank" value="{{ division_rank }}" {% if user.division_rank == division_rank or user.additional_division_rank == division_rank %}checked{% endif %}><span>{{ division_rank_labels[division_rank].split(' · ')[1] }}</span></label>
+                            {% endfor %}
+                          </div>
+                        </section>
+                      {% endfor %}
+                    </fieldset>
+                    <label>
+                      <span>New Password</span>
+                      <input type="password" name="password" placeholder="Leave blank to keep" aria-label="New password for {{ user.username }}">
+                    </label>
+                    <div class="account-detail-actions">
+                      <button type="submit">Save Account</button>
+                      {% if user.role != 'owner' and user.id != current_user.id %}
+                        <button class="button danger" type="submit" form="user-delete-{{ user.id }}">Delete</button>
+                      {% else %}
+                        <span class="locked-account-label">Locked account</span>
+                      {% endif %}
+                    </div>
+                  </form>
+                  {% if user.role != 'owner' and user.id != current_user.id %}
+                    <form id="user-delete-{{ user.id }}" method="post" action="{{ url_for('delete_supervisor_user', user_id=user.id) }}"></form>
+                  {% endif %}
+                </div>
+              </details>
+            {% else %}
+              <article class="account-empty-card">No accounts created yet.</article>
+            {% endfor %}
+            <article class="account-empty-card" data-account-empty hidden>No accounts match those filters.</article>
+          </div>
+      </section>
+
+      <section class="tab-panel builtin-panel boxed-section">
+        <div class="answer-key-heading">
+          <div><p class="eyebrow">Question Library</p><h2>Answer Keys &amp; Cheat Sheets</h2><p>Open an exam or training bank to review every built-in question one at a time.</p></div>
+          <span>{{ answer_key_groups|length }} question banks</span>
+        </div>
+        <div class="answer-key-grid">
+          {% for group in answer_key_groups %}
+            <button class="answer-key-card {{ group.kind|lower }}" type="button" data-answer-key-open="{{ group.slug }}">
+              <div><span>{{ "%02d"|format(loop.index) }}</span><b>{{ group.kind }}</b></div>
+              <h3>{{ group.title }}</h3><p>{{ group.summary }}</p>
+              <footer><strong>{{ group.question_count }} questions</strong><span>Open Answer Key &rarr;</span></footer>
+            </button>
+          {% endfor %}
+        </div>
+
+        {% for group in answer_key_groups %}
+          <div class="answer-key-modal" data-answer-key-modal="{{ group.slug }}" hidden>
+            <button class="answer-key-backdrop" type="button" data-answer-key-close aria-label="Close answer key"></button>
+            <section class="answer-key-dialog" role="dialog" aria-modal="true" aria-labelledby="answer-key-title-{{ group.slug }}">
+              <header><div><span>{{ group.kind }} Answer Key</span><h2 id="answer-key-title-{{ group.slug }}">{{ group.title }}</h2><p>{{ group.question_count }} built-in questions</p></div><button type="button" data-answer-key-close aria-label="Close">&times;</button></header>
+              <div class="answer-key-progress"><div><span data-answer-key-position>Question 1 of {{ group.question_count }}</span><b data-answer-key-review-count>0 checked &middot; 0 marked wrong</b></div><div><i data-answer-key-progress></i></div></div>
+              <div class="answer-key-stage">
+                {% for question in group.questions %}
+                  <article class="answer-key-question" data-answer-key-question data-index="{{ loop.index0 }}" data-question-key="{{ question.key }}"{% if not loop.first %} hidden{% endif %}>
+                    <div class="answer-key-question-meta"><span>{{ question.category }}</span><b>{{ 'Written Answer' if question.written else 'Multiple Choice' }}</b>{% if question.is_customized %}<em>Customized</em>{% endif %}</div>
+                    <h3>{{ question.prompt }}</h3>
+                    <form method="post" action="{{ url_for('update_builtin_question', question_key=question.key) }}" class="answer-key-editor" data-answer-key-editor>
+                      <input type="hidden" name="prompt" value="{{ question.prompt }}">
+                      <input type="hidden" name="category" value="{{ question.category }}">
+                      <input type="hidden" name="written" value="{{ '1' if question.written else '' }}">
+                      <input type="hidden" name="choices" value="{{ question.choices|join('\n') }}">
+                      {% if not question.written and question.choices %}
+                        <input type="hidden" name="answer" value="{{ question.answer }}" data-answer-value>
+                        <fieldset class="answer-key-options"><legend>Edit every choice, then select the correct answer</legend>{% for choice in question.choices %}<label class="{% if choice == question.answer %}correct-answer{% endif %}"><input type="radio" name="correct_choice" value="{{ loop.index0 }}" data-answer-correct {% if choice == question.answer %}checked{% endif %} required><i>{{ ['A','B','C','D','E','F'][loop.index0] }}</i><input class="answer-key-choice-input" type="text" value="{{ choice }}" data-answer-choice aria-label="Choice {{ ['A','B','C','D','E','F'][loop.index0] }}" required><b>&check;</b></label>{% endfor %}</fieldset>
+                      {% else %}
+                        <label class="answer-key-written"><span>Edit the correct written answer</span><textarea name="answer" rows="4" required>{{ question.answer }}</textarea></label>
+                      {% endif %}
+                      <div class="answer-key-answer"><span>Correct Answer</span><strong data-answer-key-current>{{ question.answer }}</strong></div>
+                      <div class="answer-key-save-row"><span data-answer-save-status>Select or edit an answer, then save it.</span><button type="submit">Save Correct Answer</button></div>
+                    </form>
+                    <div class="answer-key-verdict"><span>Is this answer key correct?</span><div><button class="answer-key-wrong" type="button" data-answer-verdict="wrong">&times; Wrong</button><button class="answer-key-correct" type="button" data-answer-verdict="correct">&check; Correct</button></div></div>
+                  </article>
+                {% endfor %}
+              </div>
+              <footer><button class="button secondary" type="button" data-answer-key-previous>&larr; Previous</button><span data-answer-key-status>Review each answer, then mark it correct or wrong.</span><button type="button" data-answer-key-next>Next Question &rarr;</button></footer>
+            </section>
+          </div>
+        {% endfor %}
+
+      </section>
+
+      <section class="tab-panel add-custom-panel boxed-section">
+        <div>
+          <h2>Add Custom Question</h2>
+          <p>Custom questions are added onto the selected quiz immediately.</p>
+        </div>
+        <form method="post" action="{{ url_for('add_custom_question') }}" class="custom-question-form">
+          <label>
+            <span>Quiz</span>
+            <select name="quiz_slug" required>
+              {% for quiz in quiz_options %}
+                <option value="{{ quiz.slug }}">{{ quiz.title }}</option>
+              {% endfor %}
+            </select>
+          </label>
+          <label>
+            <span>Category</span>
+            <input name="category" value="Custom" required>
+          </label>
+          <label class="wide-field">
+            <span>Question</span>
+            <textarea name="prompt" rows="3" required></textarea>
+          </label>
+          <label>
+            <span>Correct Answer</span>
+            <input name="answer" required>
+          </label>
+          <label>
+            <span>Question Type</span>
+            <select name="written">
+              <option value="">Multiple Choice</option>
+              <option value="1">Written Answer</option>
+            </select>
+          </label>
+          <label class="wide-field">
+            <span>Multiple Choice Options</span>
+            <textarea name="choices" rows="4" placeholder="One option per line. Include wrong options; the correct answer is added automatically if missing."></textarea>
+          </label>
+          <button type="submit">Add Question</button>
+        </form>
+      </section>
+
+      <section class="tab-panel custom-panel boxed-section">
+        <h2>Custom Questions</h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Quiz</th>
+                <th>Category</th>
+                <th>Question</th>
+                <th>Type</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for question in custom_questions %}
+                <tr>
+                  <td>{{ question.quiz_slug }}</td>
+                  <td>{{ question.category }}</td>
+                  <td>{{ question.prompt }}</td>
+                  <td>{% if question.written %}Written{% else %}Multiple Choice{% endif %}</td>
+                  <td>
+                    <form method="post" action="{{ url_for('delete_custom_question', question_id=question.id) }}">
+                      <button class="button danger" type="submit">Delete</button>
+                    </form>
+                  </td>
+                </tr>
+              {% else %}
+                <tr><td colspan="5">No custom questions yet.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="tab-panel complaints-panel boxed-section">
+        <div>
+          <h2>Complaint Submissions</h2>
+          <p>Review complaints submitted from the public homepage.</p>
+        </div>
+        <div class="complaint-list" id="complaint-list" data-live-url="{{ url_for('live_complaints') }}">
+          {% for complaint in complaints %}
+            <details class="complaint-card" data-live-card-id="{{ complaint.id }}">
+              <summary class="complaint-card-head">
+                <div>
+                  <span>#{{ complaint.id }} &middot; {{ complaint.created_at }}</span>
+                  <h3>{{ complaint.name }}</h3>
+                  <p>{{ complaint.topic_datetime }} &middot; {{ complaint.officer_reported }}</p>
+                </div>
+                <div class="cadet-card-meta">
+                  <strong>Open</strong>
+                  <small>details</small>
+                </div>
+              </summary>
+              <div class="complaint-card-body">
+                <div class="complaint-grid">
+                  <p><b>Discord Username:</b> {{ complaint.discord_username }}</p>
+                  <p><b>Contact Info:</b> {{ complaint.contact_info }}</p>
+                  <p><b>Reported Officer:</b> {{ complaint.officer_reported }}</p>
+                  <p><b>Topic / Date-Time:</b> {{ complaint.topic_datetime }}</p>
+                </div>
+                <p><b>Events:</b><br>{{ complaint.event_details }}</p>
+                {% if complaint.evidence %}<p><b>Evidence:</b><br>{{ complaint.evidence }}</p>{% endif %}
+                {% if complaint.witnesses %}<p><b>Witnesses:</b><br>{{ complaint.witnesses }}</p>{% endif %}
+                {% if complaint.additional_info %}<p><b>Additional Info:</b><br>{{ complaint.additional_info }}</p>{% endif %}
+                <form method="post" action="{{ url_for('delete_complaint', complaint_id=complaint.id) }}" data-live-list-action>
+                  <button class="button danger" type="submit">Delete</button>
+                </form>
+              </div>
+            </details>
+          {% else %}
+            <article class="question-card">
+              <h2>No complaints submitted yet.</h2>
+              <p>Complaints submitted from the public form will show here.</p>
+            </article>
+          {% endfor %}
+        </div>
+      </section>
+
+    </section>
+  </main>
+  <script>
+    const adminTabIds = [
+      "accounts-tab",
+      "builtin-tab",
+      "add-custom-tab",
+      "custom-tab",
+      "complaints-tab",
+    ];
+
+    function activeAdminTab() {
+      return document.querySelector('input[name="admin-tab"]:checked')?.id || "accounts-tab";
+    }
+
+    function setAdminTab(tabId, replace = false) {
+      if (!adminTabIds.includes(tabId)) return;
+      const tab = document.getElementById(tabId);
+      if (!tab) return;
+      tab.checked = true;
+      const nextUrl = `${window.location.pathname}${window.location.search}#${tabId}`;
+      if (replace) {
+        window.history.replaceState(null, "", nextUrl);
+      } else {
+        window.history.pushState(null, "", nextUrl);
+      }
+    }
+
+    const initialTab = window.location.hash.slice(1);
+    if (adminTabIds.includes(initialTab)) {
+      setAdminTab(initialTab, true);
+    }
+
+    for (const tabId of adminTabIds) {
+      document.querySelector(`label[for="${tabId}"]`)?.addEventListener("click", () => {
+        setAdminTab(tabId);
+      });
+    }
+
+    document.addEventListener("submit", (event) => {
+      const form = event.target.closest("form");
+      if (!form || form.method.toLowerCase() !== "post") return;
+      let input = form.querySelector('input[name="active_tab"]');
+      if (!input) {
+        input = document.createElement("input");
+        input.type = "hidden";
+        input.name = "active_tab";
+        form.append(input);
+      }
+      input.value = activeAdminTab();
+    });
+
+    const accountSearch = document.querySelector("[data-account-search]");
+    const accountRoleFilter = document.querySelector("[data-account-role-filter]");
+    const accountDivisionFilter = document.querySelector("[data-account-division-filter]");
+    const accountRows = [...document.querySelectorAll(".account-card[data-account-row]")];
+    const accountCount = document.querySelector("[data-account-count]");
+    const accountEmpty = document.querySelector("[data-account-empty]");
+
+    function normalizeAccountSearch(value) {
+      return String(value || "")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, " ")
+        .trim();
+    }
+
+    function applyAccountFilters() {
+      const searchValue = normalizeAccountSearch(accountSearch?.value);
+      const searchTerms = searchValue ? searchValue.split(/\s+/) : [];
+      const roleValue = accountRoleFilter?.value || "";
+      const divisionValue = accountDivisionFilter?.value || "";
+      let visibleCount = 0;
+
+      for (const row of accountRows) {
+        const searchableText = normalizeAccountSearch(row.dataset.search);
+        const matchesSearch = searchTerms.every((term) => searchableText.includes(term));
+        const matchesRole = !roleValue || row.dataset.role === roleValue;
+        const matchesDivision = !divisionValue || (row.dataset.division || "").split(/\s+/).includes(divisionValue);
+        const visible = matchesSearch && matchesRole && matchesDivision;
+        row.hidden = !visible;
+        row.style.display = visible ? "" : "none";
+        if (!visible) row.open = false;
+        if (visible) visibleCount += 1;
+      }
+
+      if (accountCount) {
+        accountCount.textContent = `${visibleCount} ${visibleCount === 1 ? "account" : "accounts"} showing`;
+      }
+      if (accountEmpty) {
+        accountEmpty.hidden = visibleCount !== 0;
+        accountEmpty.style.display = visibleCount === 0 ? "" : "none";
+      }
+    }
+
+    accountSearch?.addEventListener("input", applyAccountFilters);
+    accountRoleFilter?.addEventListener("change", applyAccountFilters);
+    accountDivisionFilter?.addEventListener("change", applyAccountFilters);
+    document.querySelector("[data-account-clear]")?.addEventListener("click", () => {
+      if (accountSearch) accountSearch.value = "";
+      if (accountRoleFilter) accountRoleFilter.value = "";
+      if (accountDivisionFilter) accountDivisionFilter.value = "";
+      applyAccountFilters();
+    });
+    for (const button of document.querySelectorAll("[data-account-role-jump]")) {
+      button.addEventListener("click", () => {
+        if (accountRoleFilter) accountRoleFilter.value = button.dataset.accountRoleJump || "";
+        applyAccountFilters();
+        document.querySelector(".account-roster-panel")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    }
+    applyAccountFilters();
+
+    document.querySelectorAll("[data-answer-key-modal]").forEach((modal) => {
+      const slug = modal.dataset.answerKeyModal;
+      const questions = [...modal.querySelectorAll("[data-answer-key-question]")];
+      const position = modal.querySelector("[data-answer-key-position]");
+      const reviewCount = modal.querySelector("[data-answer-key-review-count]");
+      const progress = modal.querySelector("[data-answer-key-progress]");
+      const status = modal.querySelector("[data-answer-key-status]");
+      const previous = modal.querySelector("[data-answer-key-previous]");
+      const next = modal.querySelector("[data-answer-key-next]");
+      const storageKey = `doc-answer-key-${slug}`;
+      let current = 0;
+      let verdicts = {};
+      try { verdicts = JSON.parse(sessionStorage.getItem(storageKey) || "{}"); } catch (error) { verdicts = {}; }
+
+      function updateAnswerKey() {
+        questions.forEach((question, index) => {
+          question.hidden = index !== current;
+          question.classList.toggle("reviewed-correct", verdicts[index] === "correct");
+          question.classList.toggle("reviewed-wrong", verdicts[index] === "wrong");
+        });
+        const correct = Object.values(verdicts).filter((value) => value === "correct").length;
+        const wrong = Object.values(verdicts).filter((value) => value === "wrong").length;
+        position.textContent = `Question ${current + 1} of ${questions.length}`;
+        reviewCount.textContent = `${correct} checked · ${wrong} marked wrong`;
+        progress.style.width = `${((current + 1) / questions.length) * 100}%`;
+        previous.disabled = current === 0;
+        next.textContent = current === questions.length - 1 ? "Finish Review" : "Next Question →";
+        const verdict = verdicts[current];
+        status.textContent = verdict ? `Marked ${verdict}. You can change this selection.` : "Review the answer, then mark it correct or wrong.";
+        sessionStorage.setItem(storageKey, JSON.stringify(verdicts));
+      }
+      const openButton = document.querySelector(`[data-answer-key-open="${slug}"]`);
+      function closeAnswerKey() {
+        modal.hidden = true;
+        document.body.classList.remove("answer-key-open");
+        openButton?.focus();
+      }
+      openButton?.addEventListener("click", () => {
+        document.querySelectorAll("[data-answer-key-modal]:not([hidden])").forEach((openModal) => {
+          if (openModal !== modal) openModal.hidden = true;
+        });
+        modal.hidden = false;
+        document.body.classList.add("answer-key-open");
+        updateAnswerKey();
+        modal.querySelector("[data-answer-key-close]")?.focus();
+      });
+      modal.querySelectorAll("[data-answer-key-close]").forEach((button) => button.addEventListener("click", closeAnswerKey));
+      previous.addEventListener("click", () => { if (current > 0) current -= 1; updateAnswerKey(); });
+      next.addEventListener("click", () => { if (current < questions.length - 1) current += 1; else closeAnswerKey(); updateAnswerKey(); });
+      modal.addEventListener("click", (event) => {
+        const button = event.target.closest("[data-answer-verdict]");
+        if (!button) return;
+        verdicts[current] = button.dataset.answerVerdict;
+        updateAnswerKey();
+      });
+      updateAnswerKey();
+    });
+
+    document.addEventListener("keydown", (event) => {
+      if (event.key !== "Escape") return;
+      document.querySelector("[data-answer-key-modal]:not([hidden]) [data-answer-key-close]")?.click();
+    });
+
+    document.querySelectorAll("[data-answer-key-editor]").forEach((form) => {
+      const question = form.closest("[data-answer-key-question]");
+      const saveButton = form.querySelector('button[type="submit"]');
+      const saveStatus = form.querySelector("[data-answer-save-status]");
+
+      function refreshSelectedAnswer() {
+        const selected = form.querySelector("[data-answer-correct]:checked");
+        if (!selected) return;
+        const selectedLabel = selected.closest("label");
+        const selectedChoice = selectedLabel?.querySelector("[data-answer-choice]")?.value.trim() || "";
+        const answerValue = form.querySelector("[data-answer-value]");
+        const choiceValues = [...form.querySelectorAll("[data-answer-choice]")].map((input) => input.value.trim());
+        if (answerValue) answerValue.value = selectedChoice;
+        const choicesValue = form.querySelector('input[name="choices"]');
+        if (choicesValue) choicesValue.value = choiceValues.join("\n");
+        form.querySelectorAll(".answer-key-options label").forEach((option) => {
+          option.classList.toggle("correct-answer", option.contains(selected));
+        });
+        const current = form.querySelector("[data-answer-key-current]");
+        if (current) current.textContent = selectedChoice || "No answer entered";
+        saveStatus.textContent = "Choices updated. Save to apply them everywhere.";
+      }
+
+      form.querySelectorAll("[data-answer-correct]").forEach((input) => {
+        input.addEventListener("change", refreshSelectedAnswer);
+      });
+      form.querySelectorAll("[data-answer-choice]").forEach((input) => {
+        input.addEventListener("input", refreshSelectedAnswer);
+      });
+      form.querySelector('textarea[name="answer"]')?.addEventListener("input", (event) => {
+        const current = form.querySelector("[data-answer-key-current]");
+        if (current) current.textContent = event.target.value || "No answer entered";
+        saveStatus.textContent = "Written answer changed. Save to apply it everywhere.";
+      });
+
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        if (form.querySelector("[data-answer-correct]")) refreshSelectedAnswer();
+        if (!form.reportValidity() || form.dataset.saving === "true") return;
+        form.dataset.saving = "true";
+        saveButton.disabled = true;
+        saveButton.textContent = "Saving...";
+        saveStatus.textContent = "Updating the correct answer...";
+        try {
+          const response = await fetch(form.action, {
+            method: "POST",
+            body: new FormData(form),
+            headers: { Accept: "application/json", "X-Requested-With": "answer-key-editor" },
+          });
+          const payload = await response.json();
+          if (!response.ok || !payload.ok) throw new Error(payload.error || "Unable to save answer.");
+          document.querySelectorAll("[data-answer-key-question]").forEach((matchingQuestion) => {
+            if (matchingQuestion.dataset.questionKey !== question.dataset.questionKey) return;
+            const matchingForm = matchingQuestion.querySelector("[data-answer-key-editor]");
+            const matchingCurrent = matchingQuestion.querySelector("[data-answer-key-current]");
+            if (matchingCurrent) matchingCurrent.textContent = payload.answer;
+            matchingForm?.querySelectorAll("[data-answer-choice]").forEach((choiceInput, choiceIndex) => {
+              if (payload.choices[choiceIndex] !== undefined) choiceInput.value = payload.choices[choiceIndex];
+            });
+            matchingForm?.querySelectorAll("[data-answer-correct]").forEach((radio) => {
+              const choiceText = radio.closest("label")?.querySelector("[data-answer-choice]")?.value || "";
+              radio.checked = choiceText === payload.answer;
+              radio.closest("label")?.classList.toggle("correct-answer", radio.checked);
+            });
+            const matchingAnswerValue = matchingForm?.querySelector("[data-answer-value]");
+            if (matchingAnswerValue) matchingAnswerValue.value = payload.answer;
+            const matchingChoicesValue = matchingForm?.querySelector('input[name="choices"]');
+            if (matchingChoicesValue) matchingChoicesValue.value = payload.choices.join("\n");
+            const writtenAnswer = matchingForm?.querySelector('textarea[name="answer"]');
+            if (writtenAnswer) writtenAnswer.value = payload.answer;
+          });
+          saveStatus.textContent = "Saved. This is now the correct answer everywhere.";
+          question.querySelector(".answer-key-question-meta")?.insertAdjacentHTML("beforeend", question.querySelector(".answer-key-question-meta em") ? "" : "<em>Customized</em>");
+        } catch (error) {
+          saveStatus.textContent = error.message || "That answer could not be saved.";
+        } finally {
+          form.dataset.saving = "false";
+          saveButton.disabled = false;
+          saveButton.textContent = "Save Correct Answer";
+        }
+      });
+    });
+
+    const complaintList = document.querySelector("#complaint-list");
+
+    function escapeHtml(value) {
+      return String(value ?? "").replace(/[&<>"']/g, (char) => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;",
+      }[char]));
+    }
+
+    function emptyCard(title, text) {
+      return `
+        <article class="question-card">
+          <h2>${escapeHtml(title)}</h2>
+          <p>${escapeHtml(text)}</p>
+        </article>
+      `;
+    }
+
+    function optionalBlock(label, value) {
+      return value ? `<p><b>${escapeHtml(label)}:</b><br>${escapeHtml(value)}</p>` : "";
+    }
+
+    function complaintCard(complaint) {
+      return `
+        <details class="complaint-card" data-live-card-id="${complaint.id}">
+          <summary class="complaint-card-head">
+            <div>
+              <span>#${complaint.id} &middot; ${escapeHtml(complaint.created_at)}</span>
+              <h3>${escapeHtml(complaint.name)}</h3>
+              <p>${escapeHtml(complaint.topic_datetime)} &middot; ${escapeHtml(complaint.officer_reported)}</p>
+            </div>
+            <div class="cadet-card-meta">
+              <strong>Open</strong>
+              <small>details</small>
+            </div>
+          </summary>
+          <div class="complaint-card-body">
+            <div class="complaint-grid">
+              <p><b>Discord Username:</b> ${escapeHtml(complaint.discord_username)}</p>
+              <p><b>Contact Info:</b> ${escapeHtml(complaint.contact_info)}</p>
+              <p><b>Reported Officer:</b> ${escapeHtml(complaint.officer_reported)}</p>
+              <p><b>Topic / Date-Time:</b> ${escapeHtml(complaint.topic_datetime)}</p>
+            </div>
+            <p><b>Events:</b><br>${escapeHtml(complaint.event_details)}</p>
+            ${optionalBlock("Evidence", complaint.evidence)}
+            ${optionalBlock("Witnesses", complaint.witnesses)}
+            ${optionalBlock("Additional Info", complaint.additional_info)}
+            <form method="post" action="/supervisor/complaints/${complaint.id}/delete" data-live-list-action>
+              <button class="button danger" type="submit">Delete</button>
+            </form>
+          </div>
+        </details>
+      `;
+    }
+
+    function openCardIds(container) {
+      return new Set([...container.querySelectorAll("details[open][data-live-card-id]")].map((card) => card.dataset.liveCardId));
+    }
+
+    function restoreOpenCards(container, ids) {
+      for (const card of container.querySelectorAll("details[data-live-card-id]")) {
+        if (ids.has(card.dataset.liveCardId)) {
+          card.open = true;
+        }
+      }
+    }
+
+    async function refreshLiveList(container, key, renderCard, emptyTitle, emptyText) {
+      if (!container) return;
+      const openIds = openCardIds(container);
+      const response = await fetch(container.dataset.liveUrl, { headers: { Accept: "application/json" } });
+      if (!response.ok) return;
+      const data = await response.json();
+      const items = data[key] || [];
+      container.innerHTML = items.length
+        ? items.map(renderCard).join("")
+        : emptyCard(emptyTitle, emptyText);
+      restoreOpenCards(container, openIds);
+    }
+
+    function refreshComplaints() {
+      return refreshLiveList(
+        complaintList,
+        "complaints",
+        complaintCard,
+        "No complaints submitted yet.",
+        "Complaints submitted from the public form will show here.",
+      );
+    }
+
+    document.addEventListener("submit", async (event) => {
+      const form = event.target.closest("[data-live-list-action]");
+      if (!form) return;
+      event.preventDefault();
+      const response = await fetch(form.action, { method: "POST", headers: { Accept: "application/json" } });
+      if (!response.ok) return;
+      form.closest("[data-live-card-id]")?.remove();
+      refreshComplaints();
+    });
+
+    refreshComplaints();
+    setInterval(() => { if (!document.hidden) refreshComplaints(); }, 5000);
+  </script>
+</body>
+</html>
