@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>DOC · Mobile Data Terminal</title>
+  <title>LegacyRP DOC MDT</title>
   <link rel="icon" type="image/png" href="{{ url_for('static', filename='bolingbroke-logo.png') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
   <script defer src="{{ url_for('static', filename='live-actions.js') }}"></script>
@@ -101,8 +101,8 @@
       <div class="mdt-topbar">
         {% if show_cadet_shortcuts %}
         <nav class="mdt-cadet-shortcuts" aria-label="Cadet tools">
-          <a class="doc-icon-button" href="{{ url_for('cadet_panel', _anchor='cadet-self-time') }}" data-dashboard-panel data-panel-title="Cadet - Timestamp" data-panel-url="{{ url_for('cadet_panel', embed=1, _anchor='cadet-self-time') }}" title="Timestamp prompt" aria-label="Timestamp prompt"><svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 8v5l3 2"/></svg></a>
-          <a class="doc-icon-button" href="{{ url_for('cadet_panel', _anchor='cadet-fto-evaluation') }}" data-dashboard-panel data-panel-title="Cadet - FTO evaluation" data-panel-url="{{ url_for('cadet_panel', embed=1, _anchor='cadet-fto-evaluation') }}" title="FTO evaluation form" aria-label="FTO evaluation form"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M7 4h10v16H7zM9 2h6v4H9zM10 10h4M10 14h4M10 18h3"/></svg></a>
+          <a class="doc-icon-button" href="{{ url_for('cadet_panel', _anchor='cadet-self-time') }}" data-timestamp-popup data-panel-title="Cadet - Timestamp" data-panel-url="{{ url_for('cadet_panel', embed=1, _anchor='cadet-self-time') }}" title="Timestamp prompt" aria-label="Timestamp prompt"><svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 8v5l3 2"/></svg></a>
+          <a class="doc-icon-button" href="{{ url_for('cadet_panel', _anchor='cadet-fto-evaluation') }}" data-evaluation-popup data-panel-title="Cadet - FTO evaluation" data-panel-url="{{ url_for('cadet_panel', embed=1, _anchor='cadet-fto-evaluation') }}" title="FTO evaluation form" aria-label="FTO evaluation form"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M7 4h10v16H7zM9 2h6v4H9zM10 10h4M10 14h4M10 18h3"/></svg></a>
         </nav>
         {% endif %}
           <button class="dashboard-notification-button" type="button" data-notification-toggle aria-expanded="false" aria-controls="dashboard-notification-center">

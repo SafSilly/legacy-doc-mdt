@@ -7,6 +7,28 @@
   <link rel="icon" type="image/png" href="{{ url_for('static', filename='bolingbroke-logo.png') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
   <script defer src="{{ url_for('static', filename='live-actions.js') }}"></script>
+{% if request.args.get('popup') == 'timestamp' %}
+<style>
+html,body{margin:0!important;background:#171816!important;color-scheme:dark;scrollbar-width:thin;scrollbar-color:#796944 #141410}
+body > main.shell{padding:0!important;margin:0!important;width:100%!important;max-width:none!important}
+body > main.shell > :not(#cadet-self-time):not(.flash-stack){display:none!important}
+#cadet-self-time{display:block!important;position:static!important;padding:0!important;background:none!important}
+#cadet-self-time > .doc-modal-backdrop{display:none}
+#cadet-self-time .doc-time-modal{position:static!important;transform:none!important;width:100%!important;max-width:none!important;max-height:none!important;margin:0!important;border:0!important;border-radius:0!important;background:#171816;box-shadow:none}
+.doc-time-modal > header{padding:18px 20px;border-top:3px solid #b79a54;background:#1e1f1b;border-bottom:1px solid #ffffff0c}
+.doc-time-modal > header h2{font-size:17px;font-weight:600}
+.doc-time-modal > header a{border-radius:6px;background:#ffffff06;padding:4px 9px;text-decoration:none}
+.doc-session-bar{margin:16px 20px;border:1px solid #36392f;border-radius:8px;background:#1e1f1b;padding:12px}
+.doc-time-grid{padding:0 20px 20px;gap:14px}
+.doc-officer-picker,.doc-recent-sessions{background:#131511;border:1px solid #36392f;border-radius:8px;padding:12px}
+.doc-time-modal h3,.doc-session-bar strong{font-size:13px;font-weight:600}
+.doc-time-modal input{background:#10120f;color:#eee;border:1px solid #36392f;border-radius:7px;font-size:13px;min-height:40px}
+.doc-time-modal button{border-radius:7px;font-size:12px;font-weight:500;box-shadow:none}
+.doc-recent-sessions article{background:#191b16;border-color:#36392f;border-radius:8px}
+.doc-time-modal [data-fto-option] small{display:none}
+@media(max-width:580px){.cadet-self-time-grid{grid-template-columns:1fr}}
+</style>
+{% endif %}
 </head>
 <body class="{% if request.args.get('embed') %}embedded-panel-body{% endif %}">
   <main class="shell">
@@ -502,6 +524,16 @@
         : '<p class="muted-note" data-empty-session>No timestamp sessions yet.</p>';
     }
 
+    {% if request.args.get('popup') == 'timestamp' %}
+    document.addEventListener('click', event => {
+      const close = event.target.closest('#cadet-self-time > .doc-modal-backdrop, #cadet-self-time header a');
+      if(close){event.preventDefault();parent.postMessage({type:'mdt-close-timestamp'},location.origin);}
+    });
+    document.addEventListener('keydown', event => {if(event.key==='Escape')parent.postMessage({type:'mdt-close-timestamp'},location.origin);});
+    const compactTimestampTitle = () => {const title=document.getElementById('cadet-self-time-title');if(title)title.textContent='Training Timestamps';};
+    compactTimestampTitle();
+    new MutationObserver(compactTimestampTitle).observe(document.querySelector('main'),{childList:true});
+    {% endif %}
     bindTimestampControls();
     formatTimestampNodes();
     refreshTimestampHistory();

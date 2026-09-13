@@ -239,3 +239,64 @@ html:has(body.mdt)::-webkit-scrollbar-thumb, html:has(body.mdt-embedded)::-webki
 .mdt::-webkit-scrollbar-thumb, .mdt *::-webkit-scrollbar-thumb, .mdt-embedded::-webkit-scrollbar-thumb, .mdt-embedded *::-webkit-scrollbar-thumb { background:#796944; border:2px solid #141410; border-radius:10px; }
 html:has(body.mdt)::-webkit-scrollbar-corner, html:has(body.mdt-embedded)::-webkit-scrollbar-corner,
 .mdt *::-webkit-scrollbar-corner, .mdt-embedded *::-webkit-scrollbar-corner { background:#141410; }
+/* Consistent top-bar tools: timestamp, evaluation and notifications. */
+.mdt .mdt-topbar { gap:10px; }
+.mdt .mdt-cadet-shortcuts { gap:8px; }
+.mdt .mdt-cadet-shortcuts .doc-icon-button,
+.mdt .mdt-topbar .dashboard-notification-button {
+  display:inline-flex; align-items:center; justify-content:center;
+  position:relative; width:38px; height:38px; min-height:38px;
+  padding:9px; border:1px solid #ffffff12; border-radius:12px;
+  background:#1b1a16; color:#ccb77f; box-shadow:none;
+  transition:background .15s ease,border-color .15s ease,color .15s ease;
+}
+.mdt .mdt-cadet-shortcuts .doc-icon-button svg,
+.mdt .mdt-topbar .dashboard-notification-button svg {
+  width:18px; height:18px; fill:none; stroke:currentColor;
+  stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round;
+}
+.mdt .mdt-cadet-shortcuts .doc-icon-button:hover,
+.mdt .mdt-topbar .dashboard-notification-button:hover,
+.mdt .mdt-topbar .dashboard-notification-button[aria-expanded="true"] {
+  background:#29251b; border-color:#79633b; color:#ecd291;
+}
+.mdt .mdt-cadet-shortcuts .doc-icon-button:focus-visible,
+.mdt .mdt-topbar .dashboard-notification-button:focus-visible {
+  outline:2px solid #c9a24a; outline-offset:3px;
+}
+.mdt .mdt-topbar .dashboard-notification-button b {
+  position:absolute; top:-5px; right:-5px; min-width:17px; height:17px;
+  padding:0 4px; display:flex; align-items:center; justify-content:center;
+  border:2px solid #10100f; border-radius:9px; background:#c9a24a;
+  color:#17140d; font-size:9px; font-weight:700; line-height:1;
+}
+
+.mdt-evaluation-popup { width:min(800px,calc(100vw - 32px)); max-width:none; max-height:calc(100dvh - 40px); padding:0; margin:auto; border:1px solid #51452d; border-radius:18px; background:#171714; color:#eeeae0; overflow:auto; }
+.mdt-evaluation-popup::backdrop { background:#000a; backdrop-filter:blur(3px); }
+.mdt-evaluation-popup .cadet-evaluation-modal { position:static; width:100%; max-width:none; max-height:none; margin:0; border:0; border-radius:0; box-shadow:none; transform:none; }
+.mdt-evaluation-popup .evaluation-loading { padding:24px; }
+.mdt-evaluation-popup [role=status] { grid-column:1/-1; font-size:13px; }
+/* Compact terminal evaluation form. */
+.mdt-evaluation-popup { width:min(720px,calc(100vw - 32px)); border-color:#3c382c; border-radius:12px; box-shadow:0 24px 80px #0009; }
+.mdt-evaluation-popup .cadet-evaluation-modal { background:#171816; }
+.mdt-evaluation-popup .cadet-evaluation-modal > header { padding:18px 20px; background:#1e1f1b; border-top:3px solid #b79a54; border-bottom:1px solid #ffffff0c; align-items:center; }
+.mdt-evaluation-popup .cadet-evaluation-modal > header h2 { font-size:17px; font-weight:600; margin:0 0 5px; }
+.mdt-evaluation-popup .cadet-evaluation-modal > header p { font-size:10px; letter-spacing:.09em; color:#a49d87; margin:0; }
+.mdt-evaluation-popup .cadet-evaluation-modal > header a { display:grid; place-items:center; width:28px; height:28px; border-radius:6px; background:#ffffff06; font-size:17px; text-decoration:none; }
+.mdt-evaluation-popup .cadet-evaluation-form { padding:20px; gap:18px 16px; }
+.mdt-evaluation-popup .cadet-evaluation-form label { gap:7px; }
+.mdt-evaluation-popup .cadet-evaluation-form label > span { font-size:12px; font-weight:500; color:#c6c7bf; line-height:1.4; }
+.mdt-evaluation-popup .cadet-evaluation-form select,.mdt-evaluation-popup .cadet-evaluation-form textarea { background:#10120f; border:1px solid #36392f; border-radius:7px; color:#eee; font-size:13px; font-weight:400; box-shadow:none; }
+.mdt-evaluation-popup .cadet-evaluation-form select { min-height:40px; padding:10px 12px; }
+.mdt-evaluation-popup .cadet-evaluation-form textarea { min-height:100px; padding:12px; }
+.mdt-evaluation-popup .cadet-evaluation-form textarea::placeholder { color:#7f8578; font-weight:400; }
+.mdt-evaluation-popup .cadet-evaluation-form :is(select,textarea):focus { outline:2px solid #b79a5466; outline-offset:1px; border-color:#b79a54; }
+.mdt-evaluation-popup .evaluation-actions { grid-column:1/-1; display:flex; justify-content:flex-end; gap:10px; padding-top:14px; border-top:1px solid #ffffff0b; }
+.mdt-evaluation-popup .evaluation-actions button { min-height:38px; padding:9px 16px; border-radius:7px; font-size:12px; font-weight:600; text-transform:none; letter-spacing:0; box-shadow:none; }
+.mdt-evaluation-popup [role=status]:empty { display:none; }
+@media(max-width:540px) { .mdt-evaluation-popup .cadet-evaluation-form { grid-template-columns:1fr; padding:16px; } }
+.mdt-evaluation-popup::backdrop { background:rgba(0,0,0,.3); backdrop-filter:blur(1px); }
+
+.mdt-timestamp-popup{width:min(940px,calc(100vw - 32px));height:min(600px,calc(100dvh - 40px));max-width:none;max-height:none;margin:auto;padding:0;border:1px solid #3c382c;border-radius:12px;background:#171816;box-shadow:0 24px 80px #0009;overflow:hidden}
+.mdt-timestamp-popup::backdrop{background:rgba(0,0,0,.3);backdrop-filter:blur(1px)}
+.mdt-timestamp-popup iframe{display:block;width:100%;height:100%;border:0;background:#171816}
