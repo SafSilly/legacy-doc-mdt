@@ -33,14 +33,14 @@
         <details>
           <summary><svg class="mdt-nav-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M5 3h14v18H5zM8 7h1M12 7h4M8 12h1M12 12h4M8 17h1M12 17h4"/></svg><span>Rosters</span></summary>
           <div>
-            <a href="{{ url_for('employee_roster_page') }}" data-dashboard-panel data-panel-title="Department Roster" data-panel-url="{{ url_for('employee_roster_page', embed=1) }}">Department Roster</a>
-            {% if current_user.role in ['owner', 'admin', 'supervisor'] or current_user.division_rank in ftp_division_ranks or current_user.additional_division_rank in ftp_division_ranks %}<a href="{{ url_for('fto_panel', _anchor='ftp-roster-tab') }}" data-dashboard-panel data-panel-title="FTP Roster" data-panel-url="{{ url_for('fto_panel', embed=1, _anchor='ftp-roster-tab') }}">FTP Roster</a>{% endif %}
-            {% if current_user.role in ['owner', 'admin'] or current_user.division_rank in ert_division_ranks or current_user.additional_division_rank in ert_division_ranks %}<a href="{{ url_for('ert_panel') }}" data-dashboard-panel data-panel-title="ERT Roster" data-panel-url="{{ url_for('ert_panel', embed=1) }}">ERT Roster</a>{% endif %}
+            <a href="{{ url_for('employee_roster_page') }}" data-dashboard-panel data-panel-title="Department Roster" data-panel-url="{{ url_for('employee_roster_page', embed=1) }}"><svg class="mdt-roster-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M5 3h14v18H5zM9 7h6M8 12h1M12 12h4M8 17h1M12 17h4"/></svg><span>DOC (Main)</span></a>
+            {% if current_user.role in ['owner', 'admin', 'supervisor'] or current_user.division_rank in ftp_division_ranks or current_user.additional_division_rank in ftp_division_ranks %}<a href="{{ url_for('fto_panel', _anchor='ftp-roster-tab') }}" data-dashboard-panel data-panel-title="FTP Roster" data-panel-url="{{ url_for('fto_panel', embed=1, _anchor='ftp-roster-tab') }}"><svg class="mdt-roster-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="m2 8 10-5 10 5-10 5zM6 10v7c4 3 8 3 12 0v-7M22 8v8"/></svg><span>FTP</span></a>{% endif %}
+            {% if current_user.role in ['owner', 'admin'] or current_user.division_rank in ert_division_ranks or current_user.additional_division_rank in ert_division_ranks %}<a href="{{ url_for('ert_panel') }}" data-dashboard-panel data-panel-title="ERT Roster" data-panel-url="{{ url_for('ert_panel', embed=1) }}"><svg class="mdt-roster-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 2 3 6v6c0 6 9 10 9 10s9-4 9-10V6zM13 6l-5 7h4l-1 5 5-8h-4z"/></svg><span>ERT</span></a>{% endif %}
           </div>
         </details>
         {% if current_user.role in ['owner', 'admin'] %}
           <details>
-            <summary><svg class="mdt-nav-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 3 4 6v6c0 5 8 9 8 9s8-4 8-9V6zM9 12l2 2 4-4"/></svg><span>Admin Panel</span></summary>
+            <summary><svg class="mdt-nav-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 3 4 6v6c0 5 8 9 8 9s8-4 8-9V6zM9 12l2 2 4-4"/></svg><span>High Command</span></summary>
             <div>
               <a href="{{ url_for('mdt_accounts') }}" data-dashboard-panel data-panel-title="Admin - Accounts" data-panel-url="{{ url_for('mdt_accounts') }}">Accounts</a>
               <a href="{{ url_for('admin_panel', _anchor='builtin-tab') }}" data-dashboard-panel data-panel-title="Admin - Built-In Questions" data-panel-url="{{ url_for('admin_panel', embed=1, _anchor='builtin-tab') }}">Built-In Questions</a>
@@ -511,7 +511,7 @@
       dashboardHomeViews.forEach((item) => item.hidden = true);
       dashboardEmbedded.hidden = false;
       const fullPanelTitle = link.dataset.panelTitle || link.textContent.trim();
-      const usesInnerHeader = forceInnerHeader || ["employee-training", "admin-accounts"].includes(panelSlug(link));
+      const usesInnerHeader = forceInnerHeader || ["employee-training", "admin-accounts", "department-roster"].includes(panelSlug(link));
       setEmbeddedInnerHeader(usesInnerHeader);
       const [panelGroup, ...panelNameParts] = fullPanelTitle.split(" - ");
       const panelGroupLabel = document.querySelector("[data-dashboard-embedded-group]");

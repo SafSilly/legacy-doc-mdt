@@ -3477,7 +3477,7 @@ def employee_roster_page() -> str:
         if members:
             roster_sections.append({"title": title, "members": members})
     return render_template(
-        "staff.html",
+        "mdt_roster.html",
         roster_sections=roster_sections,
         roster_members=roster_members,
         roster_is_live=roster_is_live,

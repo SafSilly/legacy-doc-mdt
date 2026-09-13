@@ -218,3 +218,24 @@ body.mdt { background:#090909; height:100vh; height:100dvh; overflow:hidden; }
 .embedded-panel-body .hero h1,.embedded-panel-body .mdt-accounts-head h1 { font-size:22px; font-weight:600; letter-spacing:0; margin:0; }
 .embedded-panel-body .hero .brand-block { gap:0; }
 .embedded-panel-body .mdt-accounts-head .eyebrow { display:none; }
+
+.mdt .dashboard-nav details > div > a:has(.mdt-roster-icon) { display:flex; align-items:center; gap:10px; }
+.mdt .mdt-roster-icon { width:28px; height:28px; box-sizing:border-box; padding:5px; flex-shrink:0; fill:none; stroke:#c8bc9b; stroke-width:1.6; stroke-linecap:round; stroke-linejoin:round; border:1px solid #ffffff0d; border-radius:8px; background:#ffffff04; }
+
+.mdt .dashboard-nav details > div > a:has(.mdt-roster-icon) { justify-content:flex-start; text-align:left; }
+.mdt .dashboard-nav .mdt-roster-icon + span { text-align:left; flex:0 1 auto; }
+/* Scrollbars across the MDT shell and embedded documents. */
+html:has(body.mdt), html:has(body.mdt-embedded),
+.mdt, .mdt *, .mdt-embedded, .mdt-embedded * {
+  scrollbar-width:thin;
+  scrollbar-color:#796944 #141410;
+}
+html:has(body.mdt), html:has(body.mdt-embedded) { color-scheme:dark; }
+html:has(body.mdt)::-webkit-scrollbar, html:has(body.mdt-embedded)::-webkit-scrollbar,
+.mdt::-webkit-scrollbar, .mdt *::-webkit-scrollbar, .mdt-embedded::-webkit-scrollbar, .mdt-embedded *::-webkit-scrollbar { width:9px; height:9px; }
+html:has(body.mdt)::-webkit-scrollbar-track, html:has(body.mdt-embedded)::-webkit-scrollbar-track,
+.mdt::-webkit-scrollbar-track, .mdt *::-webkit-scrollbar-track, .mdt-embedded::-webkit-scrollbar-track, .mdt-embedded *::-webkit-scrollbar-track { background:#141410; }
+html:has(body.mdt)::-webkit-scrollbar-thumb, html:has(body.mdt-embedded)::-webkit-scrollbar-thumb,
+.mdt::-webkit-scrollbar-thumb, .mdt *::-webkit-scrollbar-thumb, .mdt-embedded::-webkit-scrollbar-thumb, .mdt-embedded *::-webkit-scrollbar-thumb { background:#796944; border:2px solid #141410; border-radius:10px; }
+html:has(body.mdt)::-webkit-scrollbar-corner, html:has(body.mdt-embedded)::-webkit-scrollbar-corner,
+.mdt *::-webkit-scrollbar-corner, .mdt-embedded *::-webkit-scrollbar-corner { background:#141410; }

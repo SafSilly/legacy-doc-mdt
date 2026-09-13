@@ -36,3 +36,8 @@
 .terminal-auth .flash { font-size:12px; line-height:1.6; padding:12px; }
 .terminal-auth .terminal-issued-code { font-family:ui-monospace,monospace; font-size:13px; margin:10px 0; }
 @media(max-width:480px) { .terminal-auth-shell { padding:28px 0; } .terminal-auth-card { padding:22px 18px; } .terminal-auth-heading p { font-size:11px; } }
+.terminal-auth input, .terminal-auth .terminal-input input { background:#11110f; color:#fff; -webkit-text-fill-color:#fff; caret-color:#fff; }
+.terminal-auth input:-webkit-autofill,
+.terminal-auth .terminal-input input:-webkit-autofill,
+.terminal-auth .terminal-input input:-webkit-autofill:hover,
+.terminal-auth .terminal-input input:-webkit-autofill:focus { -webkit-box-shadow:0 0 0 1000px #11110f inset; -webkit-text-fill-color:#fff; caret-color:#fff; }
