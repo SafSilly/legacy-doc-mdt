@@ -30,7 +30,9 @@
         <details open>
           <summary><span>Employee Hub</span></summary>
           <div>
+            {% if current_user.role in ['officer', 'supervisor', 'admin', 'owner'] %}
             <a href="{{ url_for('applications_page') }}" data-dashboard-panel data-panel-title="Applications" data-panel-url="{{ url_for('applications_page', embed=1) }}">Applications</a>
+            {% endif %}
             <a href="{{ url_for('quiz_home') }}" data-dashboard-panel data-panel-title="Exams" data-panel-url="{{ url_for('quiz_home', embed=1) }}">Exams</a>
             <a href="{{ url_for('cadet_training') }}" data-dashboard-panel data-panel-title="Employee - Training" data-panel-url="{{ url_for('cadet_training', embed=1) }}">Training</a>
           </div>
@@ -98,14 +100,6 @@
             </div>
           </details>
         {% endif %}
-        {% if current_user.role in ['owner', 'admin', 'cadet'] %}
-          <details>
-            <summary><span>Cadet Panel</span></summary>
-            <div>
-              <a href="{{ url_for('cadet_panel') }}" data-dashboard-panel data-panel-title="Cadet - Overview" data-panel-url="{{ url_for('cadet_panel', embed=1) }}">Overview</a>
-            </div>
-          </details>
-        {% endif %}
       </nav>
       <div class="dashboard-sidebar-footer">
         <a href="{{ url_for('employee_profile') }}" data-dashboard-panel data-panel-title="Profile" data-panel-url="{{ url_for('employee_profile', embed=1) }}">Profile</a>
@@ -134,13 +128,17 @@
           <p class="lede">Welcome back, <strong>{{ current_user.display_name or current_user.username }}</strong>. Review department activity, open queues, and your next actions.</p>
         </div>
         <div class="dashboard-header-actions">
-          <div class="dashboard-access-summary">
-            <small>Your access</small>
-            <span class="dashboard-role-chip">{{ current_user.role|title }}</span>
-          </div>
-          <button class="dashboard-notification-button" type="button" data-notification-toggle aria-expanded="false" aria-controls="dashboard-notification-center">
+          {% if current_user.role in ['owner', 'admin', 'cadet'] %}
+          <a class="dashboard-tool-button" href="{{ url_for('cadet_panel', _anchor='cadet-self-time') }}" data-dashboard-panel data-panel-title="Cadet - Timestamp" data-panel-url="{{ url_for('cadet_panel', embed=1, _anchor='cadet-self-time') }}">
+            <svg aria-hidden="true" viewBox="0 0 24 24"><title>Timestamp</title><circle cx="12" cy="12" r="8"/><path d="M12 8v5l3 2"/></svg><span class="sr-only">Timestamp</span>
+          </a>
+          <a class="dashboard-tool-button" href="{{ url_for('cadet_panel', _anchor='cadet-fto-evaluation') }}" data-dashboard-panel data-panel-title="Cadet - Evaluation" data-panel-url="{{ url_for('cadet_panel', embed=1, _anchor='cadet-fto-evaluation') }}">
+            <svg aria-hidden="true" viewBox="0 0 24 24"><title>Evaluation</title><path d="M7 4h10v16H7zM9 2h6v4H9zM10 10h4M10 14h4M10 18h3"/></svg><span class="sr-only">Evaluation</span>
+          </a>
+          {% endif %}
+          <button class="dashboard-notification-button" type="button" title="Notifications" data-notification-toggle aria-expanded="false" aria-controls="dashboard-notification-center">
             <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M18 9a6 6 0 1 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg>
-            <span class="sr-only">Open activity notifications</span>
+            <span class="sr-only">Notifications</span>
             {% if notifications %}<b>{{ notifications|length }}</b>{% endif %}
           </button>
         </div>

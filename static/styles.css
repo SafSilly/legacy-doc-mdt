@@ -714,6 +714,41 @@ button {
 .dashboard-notification-button svg { width: 19px; height: 19px; fill: none; stroke: var(--accent); stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.8; }
 .dashboard-notification-button b { position: absolute; top: -5px; right: -5px; min-width: 19px; height: 19px; display: inline-grid; place-items: center; border: 2px solid #10100f; border-radius: 999px; background: linear-gradient(135deg, #f4e6ad, #c99f3b); color: #171206; font-size: 10px; line-height: 1; box-shadow: 0 3px 8px rgba(0, 0, 0, .35); }
 
+.dashboard-header .dashboard-tool-button,
+.dashboard-header .dashboard-notification-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 36px;
+  min-width: 36px;
+  min-height: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid #51452b;
+  border-radius: 8px;
+  background: #191915;
+  color: #e6dfcd;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: normal;
+  text-transform: none;
+  text-decoration: none;
+  box-shadow: none;
+}
+.dashboard-header .dashboard-tool-button svg {
+  width: 18px; height: 18px; fill: none; stroke: var(--accent); stroke-width: 1.7;
+  stroke-linecap: round; stroke-linejoin: round;
+}
+.dashboard-header .dashboard-tool-button:hover,
+.dashboard-header .dashboard-notification-button:hover { background: #29251a; border-color: var(--accent); }
+.dashboard-header .dashboard-tool-button:focus-visible,
+.dashboard-header .dashboard-notification-button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.dashboard-header .dashboard-notification-button b {
+  position: absolute; top: -5px; right: -5px; border: 2px solid #191915;
+  box-shadow: none; background: var(--accent); padding: 0 3px;
+}
+
 .dashboard-notification-center {
   position: fixed;
   z-index: 20;

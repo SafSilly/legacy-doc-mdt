@@ -130,29 +130,13 @@ body > main.shell > :not(#cadet-self-time):not(.flash-stack){display:none!import
               <time data-local-time="{{ active_timestamp.start_utc }}">{{ active_timestamp.start_utc }}</time>
             </p>
           </div>
-          <div class="cadet-overview-actions">
-            <a class="doc-icon-button cadet-timestamp-prompt-button" href="#cadet-self-time" title="Timestamp prompt" aria-label="Timestamp prompt">
-              <svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"></circle><path d="M12 8v5l3 2"></path></svg>
-            </a>
-            <a class="doc-icon-button cadet-evaluation-prompt-button" href="#cadet-fto-evaluation" title="FTO evaluation form" aria-label="FTO evaluation form">
-              <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M7 4h10v16H7z"></path><path d="M9 2h6v4H9zM10 10h4M10 14h4M10 18h3"></path></svg>
-            </a>
-          </div>
         </article>
       {% else %}
         <article class="cadet-time-active">
           <div>
             <span class="eyebrow">Ready</span>
             <h3>{{ current_user.callsign|bracket_callsign if current_user.callsign else 'No callsign set' }} {{ current_user.display_name or current_user.username }}</h3>
-            <p>Open the timestamp prompt to search for an FTO and start your session.</p>
-          </div>
-          <div class="cadet-overview-actions">
-            <a class="doc-icon-button cadet-timestamp-prompt-button" href="#cadet-self-time" title="Timestamp prompt" aria-label="Timestamp prompt">
-              <svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"></circle><path d="M12 8v5l3 2"></path></svg>
-            </a>
-            <a class="doc-icon-button cadet-evaluation-prompt-button" href="#cadet-fto-evaluation" title="FTO evaluation form" aria-label="FTO evaluation form">
-              <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M7 4h10v16H7z"></path><path d="M9 2h6v4H9zM10 10h4M10 14h4M10 18h3"></path></svg>
-            </a>
+            <p>Use Timestamp on the Hub Dashboard to choose an FTO and start your session.</p>
           </div>
         </article>
       {% endif %}
