@@ -1804,6 +1804,14 @@ def user_can_review_division_applications(application_type: str, user: sqlite3.R
     )
 
 
+def user_can_override_division_application(application_type: str, user: sqlite3.Row | None = None) -> bool:
+    user = user or current_user()
+    return bool(user and application_type in {"ftp", "ert"} and (
+        user["role"] in ADMIN_ROLES
+        or user_has_division_rank(user, {f"{application_type}_command"})
+    ))
+
+
 def division_application_redirect(application_type: str) -> str:
     if application_type == "ert":
         return redirect(url_for("ert_panel", _anchor="ert-applications-tab"))
@@ -2195,7 +2203,7 @@ def division_applications(application_type: str) -> list[dict[str, object]]:
         application["user_vote"] = user_votes.get(int(row["id"]), "")
         application["required_votes"] = required_votes
         application["is_final"] = application["decision_status"] in {"accepted", "denied"}
-        application["can_owner_override"] = bool(user and user["role"] == "owner")
+        application["can_command_override"] = user_can_override_division_application(application_type, user)
         application["review_history"] = application_review_history(int(row["id"]))
         applications.append(application)
     return applications
@@ -3144,7 +3152,7 @@ def application_payload(application: dict[str, object]) -> dict[str, object]:
         "decision_status": application.get("decision_status", "pending"),
         "decided_at": application.get("decided_at"),
         "is_final": application.get("is_final", False),
-        "can_owner_override": application.get("can_owner_override", False),
+        "can_command_override": application.get("can_command_override", False),
         "user_vote": application.get("user_vote", ""),
         "created_at": application["created_at"],
     }
@@ -4981,14 +4989,14 @@ def override_application(application_id: int, decision: str) -> str:
     assert user is not None
     if decision not in {"accept", "deny"}:
         abort(404)
-    if user["role"] != "owner":
-        abort(403)
     status = "accepted" if decision == "accept" else "denied"
     reviewer_note = request.form.get("reviewer_note", "").strip()[:1000]
     application = row_one("SELECT id, application_type FROM applications WHERE id = ?", (application_id,))
     if application is None:
         abort(404)
     application_type = str(application["application_type"])
+    if not user_can_override_division_application(application_type, user):
+        abort(403)
     with db_connection() as db:
         cursor = db.execute(
             """
@@ -5001,7 +5009,7 @@ def override_application(application_id: int, decision: str) -> str:
         if cursor.rowcount:
             db.execute(
                 "INSERT INTO application_review_events (application_id, user_id, event_type, decision, note, created_at) VALUES (?, ?, ?, ?, ?, ?)",
-                (application_id, user["id"], "owner-decision", status, reviewer_note, now_text()),
+                (application_id, user["id"], "command-override", status, reviewer_note, now_text()),
             )
     if request.headers.get("Accept") == "application/json":
         updated = next(
@@ -5009,7 +5017,7 @@ def override_application(application_id: int, decision: str) -> str:
             None,
         )
         return jsonify({"ok": bool(cursor.rowcount), "application": updated})
-    flash(f"Application {status} by owner override.", "success")
+    flash(f"Application {status} by command override.", "success")
     return division_application_redirect(application_type)
 
 

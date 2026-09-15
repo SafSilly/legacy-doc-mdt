@@ -1,0 +1,81 @@
+/* Active Cadets design trial: unlink this file to restore the previous design. */
+.dashboard-embedded-panel:has(iframe[src*="fto-active-tab"]) {
+  display: flex;
+  flex-direction: column;
+  height: calc(100dvh - 28px);
+  min-height: 720px;
+}
+.dashboard-embedded-panel:has(iframe[src*="fto-active-tab"])[hidden] { display: none; }
+.dashboard-embedded-panel iframe[src*="fto-active-tab"] {
+  flex: 1 1 0;
+  height: auto;
+  min-height: 0;
+  background: #10100e;
+}
+.embedded-panel-body:has(#fto-active-tab:checked) {
+  min-height: 100vh;
+  background: #10100e;
+}
+.embedded-panel-body:has(#fto-active-tab:checked) > .shell { min-height: 100vh; padding-bottom: 20px; }
+.fto-active-panel { min-height: 400px; height: auto; max-height: none; }
+.fto-active-panel .doc-cadet-dropdown,
+.fto-active-panel .doc-phase-checklist { height: auto; max-height: none; }
+.fto-add-cadet-panel {
+  background: #171612 !important;
+  border: 1px solid #49402e;
+  border-radius: 6px;
+  padding: 18px;
+  backdrop-filter: none;
+  box-shadow: none;
+}
+.fto-add-cadet-panel h2 { font-size: 19px; margin: 0 0 5px; }
+.fto-add-cadet-panel p { font-size: 12px; color: #b9b2a4; }
+.fto-add-cadet-panel .custom-question-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 16px;
+  margin-top: 14px;
+  padding: 16px;
+  background: #10100e;
+  border: 1px solid #393429;
+  border-radius: 5px;
+}
+.fto-add-cadet-panel label { min-width: 0; gap: 6px; }
+.fto-add-cadet-panel label > span { color: #c6bcaa; font-size: 10px; letter-spacing: .05em; text-transform: uppercase; }
+.fto-add-cadet-panel input, .fto-add-cadet-panel select {
+  min-height: 38px;
+  padding: 9px 11px;
+  background-color: #201e18;
+  border: 1px solid #49402e;
+  border-radius: 4px;
+  color: #f2f0e9;
+  font-size: 12px;
+}
+.fto-add-cadet-panel input:focus, .fto-add-cadet-panel select:focus { outline: 2px solid #c9a24a40; outline-offset: 1px; border-color: #c9a24a; }
+.fto-add-cadet-panel .wide-field { grid-column: 1 / -1; }
+.fto-add-cadet-panel button[type="submit"] { justify-self: start; width: auto; min-width: 130px; min-height: 36px; padding: 8px 20px; border-radius: 4px; font-size: 12px; }
+.fto-active-panel { background: #10100e !important; padding: 16px; border: 1px solid #393429; border-radius: 6px; }
+.fto-active-panel .doc-cadet-list-head { padding: 0 0 12px; margin-bottom: 12px; border-bottom: 1px solid #393429; }
+.fto-active-panel .doc-cadet-list-head h2 { font-size: 18px; }
+.fto-active-panel .doc-cadet-list-head p { font-size: 12px; color: #b9b2a4; }
+.fto-active-panel .doc-cadet-list-head > span { padding: 6px 10px; border: 1px solid #49402e; border-radius: 4px; color: #c9a24a; font: 11px ui-monospace, Consolas, monospace; white-space: nowrap; }
+.fto-active-panel .doc-cadet-row { background: #201e18; border: 1px solid #49402e; border-left: 3px solid #c9a24a; border-radius: 4px; box-shadow: none; backdrop-filter: none; }
+.fto-active-panel .doc-cadet-identity { min-width: 0; gap: 12px; }
+.fto-active-panel .doc-cadet-identity strong { color: #d5b76f; font-family: ui-monospace, Consolas, monospace; }
+.fto-active-panel .doc-cadet-identity b { overflow-wrap: anywhere; }
+.fto-active-panel .doc-icon-button { border-radius: 5px; width: 34px; height: 34px; min-height: 34px; background: #10100e; border-color: #49402e; color: #d5b76f; }
+.fto-active-panel .doc-icon-button:hover { background: #30291b; border-color: #c9a24a; }
+.fto-active-panel .doc-phase-picker { background: #10100e; border-color: #49402e; border-radius: 4px; }
+.fto-active-panel .doc-cadet-dropdown { background: #171612; border-radius: 5px; }
+.fto-active-panel .doc-phase-checklist { background: #171612; border-color: #49402e; }
+.fto-active-panel .phase-check-card { background: #201e18; border-color: #49402e; }
+.dashboard-embedded-panel:has(iframe[src*="fto-active-tab"]) .dashboard-embedded-head { padding: 14px 18px; background: #171612; border-radius: 5px; box-shadow: none; }
+.dashboard-embedded-panel:has(iframe[src*="fto-active-tab"]) .dashboard-embedded-head h1 { font-size: 27px; margin: 3px 0 0; }
+@media (max-width: 700px) {
+  .dashboard-embedded-panel:has(iframe[src*="fto-active-tab"]) { height: calc(100dvh - 74px); min-height: 600px; }
+  .fto-add-cadet-panel { padding: 14px; }
+  .fto-add-cadet-panel .custom-question-form { grid-template-columns: minmax(0, 1fr); padding: 12px; }
+  .fto-active-panel .doc-cadet-row { flex-wrap: wrap; gap: 10px; padding: 12px; }
+  .fto-active-panel .doc-cadet-identity { flex-wrap: wrap; }
+  .fto-active-panel .doc-cadet-actions { flex-wrap: wrap; }
+}

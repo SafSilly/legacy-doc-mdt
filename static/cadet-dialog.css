@@ -1,0 +1,72 @@
+body.cadet-dialog-host { overflow: hidden; }
+.dashboard-embedded-panel iframe.cadet-dialog-frame {
+  position: fixed !important; inset: 0 !important; z-index: 1000;
+  width: 100vw !important; height: 100dvh !important; min-height: 100dvh !important;
+  background: transparent !important;
+}
+body.cadet-dialog-page { background: transparent !important; overflow: hidden; }
+body.cadet-dialog-page > .shell {
+  width: var(--panel-width); margin-left: var(--panel-left); margin-right: 0;
+  padding-top: var(--panel-top);
+}
+body.cadet-dialog-page > .doc-modal:target {
+  display: flex; align-items: center; justify-content: center; padding: 24px;
+  backdrop-filter: none; -webkit-backdrop-filter: none;
+}
+body.cadet-dialog-page .doc-modal-backdrop { background: rgba(0,0,0,.48); backdrop-filter: none; -webkit-backdrop-filter: none; }
+body.cadet-dialog-page .doc-modal-card {
+  width: min(920px,100%); max-height: calc(100dvh - 48px); margin: 0;
+  background: #171714; border: 1px solid #48402d; border-top: 3px solid #c9a24a;
+  border-radius: 10px; overflow: auto; box-shadow: 0 22px 65px #0007;
+  backdrop-filter: none; -webkit-backdrop-filter: none;
+}
+body.cadet-dialog-page .doc-notes-modal { max-width: 720px; }
+body.cadet-dialog-page .doc-modal-card > header { padding: 18px 20px; background: #20201b; border-bottom: 1px solid #343127; }
+body.cadet-dialog-page .doc-modal-card > header h2 { font-size: 16px; font-weight: 650; }
+body.cadet-dialog-page .doc-modal-card > header a[aria-label="Close"] { display: grid; place-items: center; width: 30px; height: 30px; padding: 0; border: 1px solid #48402d; border-radius: 6px; color: #c9a24a; background: #26241d; text-decoration: none; }
+body.cadet-dialog-page .doc-time-grid > section { min-height: 180px; background: #11110f; }
+body.cadet-dialog-page .doc-session-bar { background: #20201b; }
+body.cadet-dialog-page .doc-note-compose { align-items: start; }
+body.cadet-dialog-page .doc-note-compose button { align-self: end; min-height: 38px; height: auto; padding: 9px 18px; }
+
+/* Operations terminal: restrained surfaces, compact metadata, roomy writing area. */
+body.cadet-dialog-page .doc-ops-modal { width: min(1160px,100%); max-width: 1160px; border-radius: 8px; }
+body.cadet-dialog-page .doc-ops-modal .doc-ops-header { padding: 16px 22px; background: #202019; }
+.doc-ops-modal .doc-ops-kicker, .doc-ops-modal .doc-ops-step { font: 10px/1.5 ui-monospace,Consolas,monospace; letter-spacing: .1em; color: #c9a24a; text-transform: uppercase; }
+.doc-ops-modal .doc-ops-layout { grid-template-columns: 250px minmax(0,1fr); background: #141411; }
+.doc-ops-modal .doc-ops-layout > aside { background: #1b1b16; padding: 18px 14px; border-right: 1px solid #373327; }
+.doc-ops-modal .doc-ops-side-head { padding: 0 4px 14px; }
+.doc-ops-modal .doc-ops-side-head h3 { font-size: 14px; font-weight: 600; }
+.doc-ops-modal .doc-ops-count { width: auto; min-width: 26px; height: 26px; border-radius: 4px; font: 11px ui-monospace,Consolas,monospace; }
+.doc-ops-modal .doc-ops-history-card { background: #131310; border: 1px solid #393529; border-left: 2px solid #9b803e; border-radius: 4px; padding: 12px; box-shadow: none; }
+.doc-ops-modal .doc-ops-history-card:hover { background: #28251a; border-color: #c9a24a; }
+.doc-ops-modal .doc-ops-history-top strong { font-size: 12px; }
+.doc-ops-modal .doc-ops-history-card p { font-size: 11px; font-weight: 500; }
+.doc-ops-modal .doc-ops-history-times { gap: 10px; }
+.doc-ops-modal .doc-ops-history-times span, .doc-ops-modal .doc-ops-history-card footer { font-size: 9px; font-weight: 400; line-height: 1.5; }
+.doc-ops-modal .doc-ops-main { padding: 20px 24px; background: #141411; }
+.doc-ops-modal .doc-modal-title-row { margin-bottom: 16px; }
+.doc-ops-modal .doc-modal-title-row h3 { font-size: 24px; letter-spacing: -.02em; margin: 4px 0 6px; }
+.doc-ops-modal .doc-modal-title-row p { font-size: 12px; color: #aaa696; }
+.doc-ops-modal .doc-ops-form-section { padding: 16px; margin-bottom: 14px; background: #1b1b16; border: 1px solid #343126; border-radius: 5px; }
+.doc-ops-modal .doc-ops-section-heading { gap: 10px; margin-bottom: 12px; }
+.doc-ops-modal .doc-ops-section-heading > span { width: 24px; height: 24px; border-radius: 4px; background: #353020; color: #dfbf72; font: 11px ui-monospace,Consolas,monospace; border: 1px solid #655431; }
+.doc-ops-modal .doc-ops-section-heading h4 { font-size: 13px; font-weight: 650; }
+.doc-ops-modal .doc-ops-section-heading p { font-size: 11px; color: #aaa696; }
+.doc-ops-modal label > span { font-size: 11px; color: #d3cfbf; }
+.doc-ops-modal select, .doc-ops-modal textarea { background-color: #0e0f0c; border: 1px solid #474131; border-radius: 4px; font-size: 12px; padding: 10px 12px; }
+.doc-ops-modal textarea { min-height: 150px; line-height: 1.65; resize: vertical; }
+.doc-ops-modal select:focus, .doc-ops-modal textarea:focus { outline: 2px solid #c9a24a30; border-color: #c9a24a; }
+.doc-ops-modal .doc-ops-session-summary { border: 1px solid #3b3526; border-radius: 4px; background: #10110d; margin-top: 12px; }
+.doc-ops-modal .doc-ops-session-summary > div { padding: 10px; border-color: #3b3526; }
+.doc-ops-modal .doc-ops-session-summary span { font-size: 8px; font-weight: 500; letter-spacing: .05em; }
+.doc-ops-modal .doc-ops-session-summary strong { font: 11px/1.5 ui-monospace,Consolas,monospace; }
+.doc-ops-modal .doc-ops-form-footer { padding-top: 14px; border-top: 1px solid #343126; gap: 16px; }
+.doc-ops-modal .doc-ops-form-footer .button { min-height: 38px; padding: 10px 16px; border-radius: 4px; font-size: 12px; }
+@media (max-width: 800px) {
+  .doc-ops-modal .doc-ops-layout { grid-template-columns: minmax(0,1fr); }
+  .doc-ops-modal .doc-ops-layout > aside { max-height: 190px; overflow: auto; border-right: 0; border-bottom: 1px solid #373327; }
+  .doc-ops-modal .doc-ops-main { padding: 16px; }
+  .doc-ops-modal .doc-ops-writing-grid { grid-template-columns: minmax(0,1fr); }
+  .doc-ops-modal .doc-ops-session-summary { grid-template-columns: repeat(2,minmax(0,1fr)); }
+}

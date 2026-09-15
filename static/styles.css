@@ -18,6 +18,24 @@ html {
   overflow-x: hidden;
 }
 
+/* Shared by public pages, Hub frames, tables, dialogs and text areas. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #9c803f #11110e;
+}
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: #11110e; }
+::-webkit-scrollbar-thumb {
+  background: #9c803f;
+  border: 2px solid #11110e;
+  border-radius: 8px;
+}
+::-webkit-scrollbar-thumb:hover { background: #c9a24a; }
+::-webkit-scrollbar-corner { background: #11110e; }
+@media (forced-colors: active) {
+  * { scrollbar-color: auto; }
+}
+
 body {
   margin: 0;
   min-height: 100vh;

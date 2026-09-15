@@ -1,0 +1,46 @@
+/* Optional application review design. Remove the stylesheet links to revert. */
+.division-applications-panel {
+  background: #10100e;
+  backdrop-filter: none;
+  border: 1px solid #393429;
+  border-radius: 6px;
+  color: #f2f0e9;
+}
+.division-applications-panel .division-applications-head { padding: 14px 18px; background: #1c1a15; }
+.division-applications-panel .division-applications-head h2 { font-size: 19px; }
+.division-applications-panel .division-application-count { display: flex; align-items: baseline; gap: 7px; min-width: 0; padding: 8px 12px; background: #10100e; border-color: #393429; border-radius: 4px; }
+.division-applications-panel .division-application-count strong { font-size: 18px; }
+.division-applications-panel .division-application-list { padding: 12px; gap: 10px; }
+.division-applications-panel .division-application-card { background: #171612; border-color: #393429; border-radius: 5px; backdrop-filter: none; }
+.division-applications-panel .complaint-card-head { background: #201e18; padding: 13px 16px; }
+.division-applications-panel .division-applicant-identity > span { font: 10px/1.5 ui-monospace, Consolas, monospace; letter-spacing: .03em; }
+.division-applications-panel .division-applicant-identity h3 { margin: 4px 0; font-size: 19px; }
+.division-applications-panel .application-status-card { background: #10100e; border-radius: 4px; padding: 7px 12px; }
+.division-applications-panel .complaint-card-body { background: #10100e; padding: 16px; }
+.division-applications-panel .division-review-layout { grid-template-columns: minmax(0, 1fr) minmax(290px, .65fr); gap: 18px; }
+.division-applications-panel .division-applicant-facts { gap: 1px; background: #393429; border: 1px solid #393429; border-radius: 4px; overflow: hidden; }
+.division-applications-panel .division-applicant-facts p { margin: 0; background: #201e18; border: 0; border-radius: 0; padding: 10px; }
+.division-applications-panel .division-application-responses { gap: 0; }
+.division-applications-panel .division-application-responses > header { padding: 10px 0; }
+.division-applications-panel .division-application-responses article { padding: 12px 0; border: 0; border-bottom: 1px solid #343027; border-radius: 0; background: transparent; }
+.division-applications-panel .division-application-responses article b { font-size: 11px; color: #c6bcaa; }
+.division-applications-panel .division-application-responses article p { margin-top: 6px; color: #f2f0e9; font-size: 12px; overflow-wrap: anywhere; }
+.division-applications-panel .application-vote-box { background: #201e18; border: 1px solid #49402e; border-radius: 5px; padding: 14px; }
+.division-applications-panel .application-decision-line > span { font-size: 11px; font-weight: 500; line-height: 1.5; color: #b9b2a4; }
+.division-applications-panel .vote-total-strip { display: flex; gap: 6px; }
+.division-applications-panel .vote-total-strip span { flex: 1; min-width: 0; border-color: #403727; background: #10100e; border-radius: 3px; font-family: ui-monospace, Consolas, monospace; }
+.division-applications-panel .application-review-note textarea { background: #0c0c0a; border: 1px solid #5c4d30; border-radius: 4px; min-height: 88px; font-size: 12px; }
+.division-applications-panel .application-review-note textarea:focus { border-color: #c9a24a; outline: 2px solid #c9a24a40; outline-offset: 1px; }
+.division-applications-panel .application-decision-button { border-radius: 4px; min-height: 35px; }
+.division-applications-panel .application-override-form { flex-wrap: wrap; gap: 8px; border-color: #49402e; }
+.division-applications-panel .application-override-form > span { flex-basis: 100%; font-size: 10px; letter-spacing: .08em; }
+.division-applications-panel .division-review-history { background: #171612; border-color: #393429; border-radius: 5px; }
+.division-applications-panel .division-review-history article { background: #10100e; border: 0; border-left: 2px solid #806b3b; border-radius: 0; }
+.division-applications-panel .division-review-history time { font-family: ui-monospace, Consolas, monospace; }
+.dashboard-embedded-panel:has(iframe[src*="applications"] ) .dashboard-embedded-head { padding: 14px 18px; background: #171612; border-radius: 5px; box-shadow: none; }
+.dashboard-embedded-panel:has(iframe[src*="applications"] ) .dashboard-embedded-head h1 { font-size: 27px; margin: 3px 0 0; }
+@media (max-width: 800px) {
+  .division-applications-panel .division-review-layout { grid-template-columns: minmax(0, 1fr); }
+  .division-applications-panel .complaint-card-body { padding: 12px; }
+  .division-applications-panel .division-review-history article { grid-template-columns: minmax(0, 1fr); }
+}

@@ -6,6 +6,7 @@
   <title>ERT Panel</title>
   <link rel="icon" type="image/png" href="{{ url_for('static', filename='bolingbroke-logo.png') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='application-review-mdt.css') }}">
 </head>
 <body class="{% if request.args.get('embed') %}embedded-panel-body{% endif %}">
   <main class="shell ert-workspace">

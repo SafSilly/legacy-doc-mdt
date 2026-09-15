@@ -6,6 +6,10 @@
   <title>FTP Panel</title>
   <link rel="icon" type="image/png" href="{{ url_for('static', filename='bolingbroke-logo.png') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='application-review-mdt.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='cadet-review-mdt.css', v='5') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='cadet-dialog.css', v='operations-2') }}">
+  <script defer src="{{ url_for('static', filename='cadet-dialog.js') }}"></script>
   <script defer src="{{ url_for('static', filename='live-actions.js') }}"></script>
 </head>
 <body class="{% if request.args.get('embed') %}embedded-panel-body{% endif %}">
@@ -338,7 +342,7 @@
             <section class="doc-modal-card doc-ops-modal" role="dialog" aria-labelledby="cadet-ops-title-{{ cadet.id }}">
               <header class="doc-ops-header">
                 <div>
-                  <span class="doc-ops-kicker">Field Training Record</span>
+                  <span class="doc-ops-kicker">DOC / Field Training Bureau / Personnel Record</span>
                   <h2 id="cadet-ops-title-{{ cadet.id }}">{{ cadet.badge_number|bracket_callsign }} {{ cadet.name }}</h2>
                 </div>
                 <a href="#fto-active-tab" aria-label="Close">x</a>
@@ -348,7 +352,7 @@
                   <div class="doc-ops-side-head">
                     <div>
                       <span class="doc-ops-kicker">History</span>
-                      <h3>Past Operations</h3>
+                      <h3>Operation Records</h3>
                     </div>
                     <span class="doc-ops-count">{{ logs|length }}</span>
                   </div>
@@ -393,9 +397,9 @@
                     <input type="hidden" name="return_to" value="fto_panel">
                     <div class="doc-modal-title-row">
                       <div>
-                        <span class="doc-ops-step">New Report</span>
-                        <h3>Log Cadet Operation</h3>
-                        <p>Select a completed timestamp, verify the session, then add the training details.</p>
+                        <span class="doc-ops-step">Report Entry</span>
+                        <h3>New Operation</h3>
+                        <p>Link a completed session and file the training record.</p>
                       </div>
                     </div>
                     <section class="doc-ops-form-section doc-ops-session-section wide-field">

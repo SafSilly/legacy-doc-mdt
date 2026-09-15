@@ -6,6 +6,10 @@
   <title>DOC Dashboard</title>
   <link rel="icon" type="image/png" href="{{ url_for('static', filename='bolingbroke-logo.png') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='application-review-mdt.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='cadet-review-mdt.css', v='5') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='cadet-dialog.css', v='operations-2') }}">
+  <script defer src="{{ url_for('static', filename='cadet-dialog.js') }}"></script>
   <script defer src="{{ url_for('static', filename='live-actions.js') }}"></script>
 </head>
 <body>
@@ -74,7 +78,7 @@
         {% endif %}
         {% if current_user.role in ['owner', 'admin', 'supervisor'] or current_user.division_rank in ftp_division_ranks or current_user.additional_division_rank in ftp_division_ranks %}
           <details>
-            <summary><span>FTP Panel</span></summary>
+            <summary><span>FTP</span></summary>
             <div>
               <a href="{{ url_for('fto_panel', _anchor='fto-active-tab') }}" data-dashboard-panel data-panel-title="FTP - Active Cadets" data-panel-url="{{ url_for('fto_panel', embed=1, _anchor='fto-active-tab') }}">Active Cadets</a>
               <a href="{{ url_for('fto_panel', _anchor='fto-cadet-archive-tab') }}" data-dashboard-panel data-panel-title="FTP - Archived Cadets" data-panel-url="{{ url_for('fto_panel', embed=1, _anchor='fto-cadet-archive-tab') }}">Archived Cadets</a>
@@ -86,7 +90,7 @@
         {% endif %}
         {% if current_user.role in ['owner', 'admin'] or current_user.division_rank in ert_division_ranks or current_user.additional_division_rank in ert_division_ranks %}
           <details>
-            <summary><span>ERT Panel</span></summary>
+            <summary><span>ERT</span></summary>
             <div>
               <a href="{{ url_for('ert_panel', _anchor='ert-training-tab') }}" data-dashboard-panel data-panel-title="ERT - Training Logs" data-panel-url="{{ url_for('ert_panel', embed=1, _anchor='ert-training-tab') }}">Training Logs</a>
               <a href="{{ url_for('ert_panel', _anchor='ert-certifications-tab') }}" data-dashboard-panel data-panel-title="ERT - Certifications" data-panel-url="{{ url_for('ert_panel', embed=1, _anchor='ert-certifications-tab') }}">Certifications</a>
@@ -477,6 +481,8 @@
         const anchor = event.target.closest("a[href]");
         if (!anchor || anchor.hasAttribute("download") || anchor.target === "_blank") return;
         const targetUrl = new URL(anchor.href, window.location.origin);
+        // Local anchors close dialogs or switch tabs without reloading the iframe.
+        if (anchor.getAttribute("href")?.startsWith("#")) return;
         if (targetUrl.origin === window.location.origin && targetUrl.pathname === new URL(hubUrl, window.location.origin).pathname) {
           event.preventDefault();
           history.replaceState(null, "", hubUrl);
